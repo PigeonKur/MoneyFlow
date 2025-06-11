@@ -1,0 +1,133 @@
+﻿@page "/"
+@inject NavigationManager Navigation
+
+
+    <!-- Header -->
+    <div class="header">
+        <div class="logo">MoneyFlow</div>
+        <div class="auth-buttons">
+        <button @onclick="NavigateToLogin" class="login-btn">Войти</button>
+        <button @onclick="NavigateToRegister" class="register-btn">Регистрация</button>
+        </div>
+    </div>
+
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="sidebar-item">
+            <img src="img/history-icon.png" alt="История">
+            <span>История</span>
+        </div>
+        <div class="sidebar-item">
+            <img src="img/transfers-icon.png" alt="Переводы">
+            <span>Переводы</span>
+        </div>
+        <div class="sidebar-item">
+            <img src="img/investments-icon.png" alt="Инвестиции">
+            <span>Инвестиции</span>
+        </div>
+        <div class="sidebar-item">
+            <img src="img/admin-icon.png" alt="Админ-панель">
+            <span>Админ-панель</span>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <h1 class="page-title">Рабочий стол</h1>
+
+        <div class="dashboard-row">
+            <div class="card wide-card">
+                <div class="card-header">
+                    <h2 class="card-title">Доходы и расходы</h2>
+                    <div class="period-selector">
+                        <button class="period-btn">
+                            Год
+                            <svg width="9" height="8" viewBox="0 0 9 8" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M1 1L4.5 7L8 1" stroke="black" />
+                            </svg>
+                        </button>
+                        <button class="period-btn">
+                            Период
+                            <svg width="9" height="8" viewBox="0 0 9 8" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M1 1L4.5 7L8 1" stroke="black" />
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+                <div class="chart-placeholder">
+                    График доходов и расходов
+                </div>
+            </div>
+
+            <div class="card small-card">
+                <div class="card-header">
+                    <h2 class="card-title">Поступления за период</h2>
+                    <button class="period-btn">
+                        Период
+                        <svg width="9" height="8" viewBox="0 0 9 8" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M1 1L4.5 7L8 1" stroke="black" />
+                        </svg>
+                    </button>
+                </div>
+                <div class="amount">4 500 Р</div>
+                <div class="amount-label">Поступления за период</div>
+                <div class="chart-placeholder" style="height: 200px;">
+                    График поступлений
+                </div>
+            </div>
+        </div>
+
+        <div class="dashboard-row">
+            <div class="card wide-card">
+                <div class="card-header">
+                    <h2 class="card-title">Динамика остатков денег на счете</h2>
+                    <div class="period-selector">
+                        <button class="period-btn">
+                            Год
+                            <svg width="9" height="8" viewBox="0 0 9 8" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M1 1L4.5 7L8 1" stroke="black" />
+                            </svg>
+                        </button>
+                        <button class="period-btn">
+                            Период
+                            <svg width="9" height="8" viewBox="0 0 9 8" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M1 1L4.5 7L8 1" stroke="black" />
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+                <div class="chart-placeholder">
+                    График динамики остатков
+                </div>
+            </div>
+
+            <div class="card small-card">
+                <div class="card-header">
+                    <h2 class="card-title">Расходы за период</h2>
+                    <button class="period-btn">
+                        Период
+                        <svg width="9" height="8" viewBox="0 0 9 8" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M1 1L4.5 7L8 1" stroke="black" />
+                        </svg>
+                    </button>
+                </div>
+                <div class="amount">2 423 Р</div>
+                <div class="amount-label">Расходы за период</div>
+                <div class="chart-placeholder" style="height: 200px;">
+                    График расходов
+                </div>
+            </div>
+        </div>
+    </div>
+
+@code {
+    private void NavigateToLogin()
+    {
+        Navigation.NavigateTo("/login");
+    }
+
+    private void NavigateToRegister()
+    {
+        Navigation.NavigateTo("/register");
+    }
+}

@@ -1,0 +1,48 @@
+﻿@inherits LayoutComponentBase
+@inject NavigationManager Navigation
+
+<!-- Header -->
+<div class="header">
+    <div class="logo">MoneyFlow</div>
+    <div class="auth-buttons">
+        <button @onclick="NavigateToLogin" class="login-btn">Войти</button>
+        <button @onclick="NavigateToRegister" class="register-btn">Регистрация</button>
+    </div>
+</div>
+
+<!-- Sidebar -->
+<div class="sidebar">
+    <div class="sidebar-item">
+        <img src="img/history-icon.png" alt="История">
+        <span>История</span>
+    </div>
+    <div class="sidebar-item">
+        <img src="img/transfers-icon.png" alt="Переводы">
+        <span>Переводы</span>
+    </div>
+    <div class="sidebar-item">
+        <img src="img/investments-icon.png" alt="Инвестиции">
+        <span>Инвестиции</span>
+    </div>
+    <div class="sidebar-item">
+        <img src="img/admin-icon.png" alt="Админ-панель">
+        <span>Админ-панель</span>
+    </div>
+</div>
+
+<!-- Main Content -->
+<div class="main-content">
+    @Body
+</div>
+
+@code {
+    private void NavigateToLogin()
+    {
+        Navigation.NavigateTo("/login");
+    }
+
+    private void NavigateToRegister()
+    {
+        Navigation.NavigateTo("/register");
+    }
+}
