@@ -3,22 +3,34 @@
 
 <link href="css/login.css" rel="stylesheet" />
 
-<h3>Вход</h3>
+<div class="screen">
+    <div class="background-shadow">
+        <div class="container">
+            <div class="text-wrapper">MoneyFlow</div>
+        </div>
+        <div class="heading">
+            <div class="div">Вход</div>
+        </div>
+        <div class="input">
+            <input @bind="loginModel.Email" placeholder="Email" class="input-field" />
+        </div>
+        <div class="input" style="top: 221px;">
+            <input type="password" @bind="loginModel.Password" placeholder="Пароль" class="input-field" />
+        </div>
+        <button class="button" @onclick="LoginUser">
+            <div class="text-wrapper-4">Войти</div>
+        </button>
 
-<div class="mb-3">
-    <label>Email:</label>
-    <input @bind="loginModel.Email" class="form-control" />
+        <div class="container-2">
+            <div class="text-wrapper-5">Нет аккаунта?</div>
+            <a href="/register" class="text-wrapper-6"> Регистрация</a>
+        </div>
+        @if (!string.IsNullOrEmpty(message))
+        {
+            <div class="alert-info">@message</div>
+        }
+    </div>
 </div>
-<div class="mb-3">
-    <label>Пароль:</label>
-    <input type="password" @bind="loginModel.Password" class="form-control" />
-</div>
-<button class="btn btn-primary" @onclick="LoginUser">Войти</button>
-
-@if (!string.IsNullOrEmpty(message))
-{
-    <div class="alert alert-info mt-3">@message</div>
-}
 
 @code {
     private UserLoginModel loginModel = new();
@@ -30,7 +42,6 @@
 
         if (response.IsSuccessStatusCode)
         {
-            message = "Успешный вход (по факту — пока просто проверка email)";
         }
         else
         {
