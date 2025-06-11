@@ -1,0 +1,46 @@
+﻿@page "/register"
+@using MoneyFlowClient.Client.Models
+@inject HttpClient Http
+
+<h3>Регистрация</h3>
+<div class="mb-3">
+    <label>Id:</label>
+    <input @bind="registerModel.UserId" class="form-control" />
+</div>
+<div class="mb-3">
+    <label>Имя:</label>
+    <input @bind="registerModel.Name" class="form-control" />
+</div>
+<div class="mb-3">
+    <label>Email:</label>
+    <input @bind="registerModel.Email" class="form-control" />
+</div>
+<div class="mb-3">
+    <label>Пароль:</label>
+    <input type="password" @bind="registerModel.Password" class="form-control" />
+</div>
+<button class="btn btn-primary" @onclick="RegisterUser">Зарегистрироваться</button>
+
+@if (!string.IsNullOrEmpty(message))
+{
+    <div class="alert alert-info mt-3">@message</div>
+}
+
+@code {
+    private UserRegisterModel registerModel = new();
+    private string message = string.Empty;
+
+    private async Task RegisterUser()
+    {
+        var response = await Http.PostAsJsonAsync("api/UserAccount", registerModel);
+
+        if (response.IsSuccessStatusCode)
+        {
+            message = "Регистрация прошла успешно!";
+        }
+        else
+        {
+            message = "Ошибка регистрации.";
+        }
+    }
+}

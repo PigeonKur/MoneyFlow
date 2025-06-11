@@ -1,0 +1,38 @@
+﻿@page "/login"
+@inject HttpClient Http
+
+<h3>Вход</h3>
+
+<div class="mb-3">
+    <label>Email:</label>
+    <input @bind="loginModel.Email" class="form-control" />
+</div>
+<div class="mb-3">
+    <label>Пароль:</label>
+    <input type="password" @bind="loginModel.Password" class="form-control" />
+</div>
+<button class="btn btn-primary" @onclick="LoginUser">Войти</button>
+
+@if (!string.IsNullOrEmpty(message))
+{
+    <div class="alert alert-info mt-3">@message</div>
+}
+
+@code {
+    private UserLoginModel loginModel = new();
+    private string message = string.Empty;
+
+    private async Task LoginUser()
+    {
+        var response = await Http.GetAsync($"api/UserAccount?email={loginModel.Email}");
+
+        if (response.IsSuccessStatusCode)
+        {
+            message = "Успешный вход (по факту — пока просто проверка email)";
+        }
+        else
+        {
+            message = "Пользователь не найден или ошибка входа.";
+        }
+    }
+}
