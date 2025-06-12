@@ -1,5 +1,6 @@
 ﻿@page "/login"
 @inject HttpClient Http
+@inject NavigationManager Navigation
 
 <link href="css/login.css" rel="stylesheet" />
 
@@ -42,10 +43,15 @@
 
         if (response.IsSuccessStatusCode)
         {
+            NavigateToMain();
         }
         else
         {
             message = "Пользователь не найден или ошибка входа.";
         }
+    }
+    private void NavigateToMain()
+    {
+        Navigation.NavigateTo("/main");
     }
 }

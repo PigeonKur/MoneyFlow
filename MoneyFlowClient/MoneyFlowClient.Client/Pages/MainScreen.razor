@@ -1,0 +1,163 @@
+﻿@page "/main"
+@inject NavigationManager Navigation
+
+<link href="css/mainScreen.css" rel="stylesheet" />
+
+<!-- Основной контейнер -->
+<div class="screen">
+    <!-- Шапка с аватаркой и балансом -->
+    <div class="header">
+        <div class="logo">MoneyFlow</div>
+        <div class="user-panel">
+            <div class="balance">
+                <span class="balance-label">Баланс</span>
+                <span class="balance-amount">15 043 Р</span>
+            </div>
+            <div class="avatar" @onclick="NavigateToAccount">
+                <img src="img/avatar.png" alt="Аватар" />
+            </div>
+        </div>
+    </div>
+
+    <!-- Боковая панель -->
+    <div class="sidebar">
+        <div class="sidebar-item" @onclick="NavigateToHistory">
+            <img src="img/icons/history.png" alt="История" />
+            <span>История</span>
+        </div>
+        <div class="sidebar-item" @onclick="NavigateToTransfers">
+            <img src="img/icons/transfer.png" alt="Переводы" />
+            <span>Переводы</span>
+        </div>
+        <div class="sidebar-item" @onclick="NavigateToInvestments">
+            <img src="img/icons/investment.png" alt="Инвестиции" />
+            <span>Инвестиции</span>
+        </div>
+        <div class="sidebar-item" @onclick="NavigateToAdmin">
+            <img src="img/icons/admin.png" alt="Админ-панель" />
+            <span>Админ-панель</span>
+        </div>
+    </div>
+
+    <!-- Основное содержимое -->
+    <div class="main-content">
+        <h1 class="page-title">Рабочий стол</h1>
+
+        <!-- Первая строка с карточками -->
+        <div class="dashboard-row">
+            <div class="card wide-card">
+                <div class="card-header">
+                    <h2>Доходы и расходы</h2>
+                    <div class="period-selector">
+                        <select @bind="selectedPeriod">
+                            <option value="day">День</option>
+                            <option value="week">Неделя</option>
+                            <option value="month">Месяц</option>
+                            <option value="year">Год</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="chart-container">
+                    <!-- Здесь будет график -->
+                    <canvas id="incomeExpenseChart"></canvas>
+                </div>
+            </div>
+
+            <div class="card small-card">
+                <div class="card-header">
+                    <h2>Поступления за период</h2>
+                    <div class="period-selector">
+                        <select @bind="selectedMiniIncomePeriod">
+                            <option value="day">День</option>
+                            <option value="week">Неделя</option>
+                            <option value="month">Месяц</option>
+                            <option value="year">Год</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Вторая строка с карточками -->
+        <div class="dashboard-row">
+            <div class="card wide-card">
+                <div class="card-header">
+                    <h2>Динамика остатков</h2>
+                    <div class="period-selector">
+                        <select @bind="selectedTrendPeriod">
+                            <option value="month">30 дней</option>
+                            <option value="quarter">3 месяца</option>
+                            <option value="year">1 год</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="chart-container">
+                    <!-- График динамики -->
+                    <canvas id="balanceTrendChart"></canvas>
+                </div>
+            </div>
+
+            <div class="card small-card">
+                <div class="card-header">
+                    <h2>Расходы за период</h2>
+                    <div class="period-selector">
+                        <select @bind="selectedMiniExpensePeriod">
+                            <option value="day">День</option>
+                            <option value="week">Неделя</option>
+                            <option value="month">Месяц</option>
+                            <option value="year">Год</option>
+                        </select>
+                    </div>
+                </div>
+                    <!-- Мини-график расходов -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+@code {
+    private string selectedPeriod = "month";
+    private string selectedTrendPeriod = "month";
+    private string selectedMiniIncomePeriod = "month";
+    private string selectedMiniExpensePeriod = "month";
+
+
+    private void NavigateToAccount()
+    {
+        Navigation.NavigateTo("/account");
+    }
+
+
+
+    private void NavigateToHistory() => Navigation.NavigateTo("/history");
+    private void NavigateToTransfers() => Navigation.NavigateTo("/transfers");
+    private void NavigateToInvestments() => Navigation.NavigateTo("/investments");
+    private void NavigateToAdmin() => Navigation.NavigateTo("/admin");
+
+    private string GetPeriodName(string period)
+    {
+        return period switch
+        {
+            "day" => "день",
+            "week" => "неделю",
+            "month" => "месяц",
+            "year" => "год",
+            _ => "период"
+        };
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            // Инициализация графиков после первого рендера
+            await InitializeCharts();
+        }
+    }
+
+    private async Task InitializeCharts()
+    {
+        // Здесь будет код инициализации Chart.js
+    }
+
+}

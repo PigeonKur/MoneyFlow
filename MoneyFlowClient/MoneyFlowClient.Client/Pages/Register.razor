@@ -1,6 +1,7 @@
 ﻿@page "/register"
 @using MoneyFlowClient.Client.Models
 @inject HttpClient Http
+@inject NavigationManager Navigation
 
 <link href="css/register.css" rel="stylesheet" />
 
@@ -43,8 +44,18 @@
 
         var response = await Http.PostAsJsonAsync("api/UserAccount", registerModel);
 
-        message = response.IsSuccessStatusCode
-            ? "Регистрация прошла успешно!"
-            : "Ошибка регистрации.";
+        if (response.IsSuccessStatusCode)
+        {
+            message = "Регистрация прошла успешно!";
+            NavigateToMain();
+        }
+        else
+        {
+            message = "Ошибка регистрации.";
+        }
+    }
+    private void NavigateToMain()
+    {
+        Navigation.NavigateTo("/main");
     }
 }
