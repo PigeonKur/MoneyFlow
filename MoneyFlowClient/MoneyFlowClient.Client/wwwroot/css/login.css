@@ -283,4 +283,10 @@
 
 .text-wrapper-6 {
     margin-left: 8px;
+
+}
+
+.screen .button:hover {
+    background-color: #1b64b4;
+    transition: background-color 0.3s ease;
 }

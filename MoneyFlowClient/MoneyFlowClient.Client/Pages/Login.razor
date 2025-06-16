@@ -39,7 +39,33 @@
 
     private async Task LoginUser()
     {
-        var response = await Http.GetAsync($"api/UserAccount?email={loginModel.Email}");
+        message = string.Empty;
+
+        if (string.IsNullOrWhiteSpace(loginModel.Email))
+        {
+            message = "Введите email.";
+            return;
+        }
+
+        if (!IsValidEmail(loginModel.Email))
+        {
+            message = "Введите корректный email.";
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(loginModel.Password))
+        {
+            message = "Введите пароль.";
+            return;
+        }
+
+        if (loginModel.Password.Length < 6)
+        {
+            message = "Пароль должен содержать не менее 6 символов.";
+            return;
+        }
+
+        var response = await Http.PostAsJsonAsync("api/UserAccount/login", loginModel);
 
         if (response.IsSuccessStatusCode)
         {
@@ -47,11 +73,24 @@
         }
         else
         {
-            message = "Пользователь не найден или ошибка входа.";
+            message = "Неверный email или пароль.";
         }
     }
     private void NavigateToMain()
     {
         Navigation.NavigateTo("/main");
     }
+    private bool IsValidEmail(string email)
+    {
+        try
+        {
+            var addr = new System.Net.Mail.MailAddress(email);
+            return addr.Address == email;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
 }
