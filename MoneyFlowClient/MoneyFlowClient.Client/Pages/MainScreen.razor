@@ -392,26 +392,34 @@
 
     private async Task LoadUserBalance()
     {
-        await JSRuntime.InvokeVoidAsync("console.log", $"Загружаю баланс для пользователя: {userId}");
+        await JSRuntime.InvokeVoidAsync("console.log", "=== Начало загрузки баланса ===");
 
         try
         {
-            if (string.IsNullOrEmpty(userId))
-            {
-                await JSRuntime.InvokeVoidAsync("console.error", "Нет userId для загрузки баланса.");
-                currentBalance = 0;
-                return;
-            }
+            var response = await Http.GetAsync($"api/Budget/users/{userId}");
+            var content = await response.Content.ReadAsStringAsync();
+            await JSRuntime.InvokeVoidAsync("console.log", $"Ответ сервера: {content}");
 
-            var budget = await Http.GetFromJsonAsync<Budget>($"api/Budget/users/{userId}");
-            await JSRuntime.InvokeVoidAsync("console.log", $"Получен бюджет: {budget?.Amount}");
+            var options = new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true,
+                    NumberHandling = JsonNumberHandling.AllowReadingFromString
+                };
+
+            var budget = JsonSerializer.Deserialize<Budget>(content, options);
+
+            await JSRuntime.InvokeVoidAsync("console.log",
+                $"Десериализовано: Amount={budget?.Amount}, Type={budget?.Amount.GetType()}");
 
             currentBalance = budget?.Amount ?? 0;
         }
         catch (Exception ex)
         {
-            await JSRuntime.InvokeVoidAsync("console.error", $"Ошибка загрузки баланса: {ex.Message}");
-            currentBalance = 0;
+            await JSRuntime.InvokeVoidAsync("console.error", $"Ошибка: {ex}");
+        }
+        finally
+        {
+            StateHasChanged();
         }
     }
 

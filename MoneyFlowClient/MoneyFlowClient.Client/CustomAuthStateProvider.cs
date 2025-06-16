@@ -15,29 +15,33 @@ public class CustomAuthStateProvider : AuthenticationStateProvider
     public override async Task<AuthenticationState> GetAuthenticationStateAsync()
     {
         var userJson = await _jsRuntime.InvokeAsync<string>("localStorage.getItem", "userInfo");
+        await _jsRuntime.InvokeVoidAsync("console.log", $"Данные из localStorage: {userJson}");
 
         if (string.IsNullOrWhiteSpace(userJson))
         {
-            var anonymous = new ClaimsPrincipal(new ClaimsIdentity());
-            return new AuthenticationState(anonymous);
+            return new AuthenticationState(new ClaimsPrincipal(new ClaimsIdentity()));
         }
 
-        var userInfo = JsonSerializer.Deserialize<UserInfo>(userJson);
-        if (userInfo is null)
+        try
         {
-            var anonymous = new ClaimsPrincipal(new ClaimsIdentity());
-            return new AuthenticationState(anonymous);
+            var userInfo = JsonSerializer.Deserialize<UserInfo>(userJson);
+            var claims = new List<Claim>
+        {
+            new Claim(ClaimTypes.NameIdentifier, userInfo.UserId.ToString())
+        };
+
+            if (!string.IsNullOrEmpty(userInfo.Email))
+            {
+                claims.Add(new Claim(ClaimTypes.Email, userInfo.Email));
+            }
+
+            var identity = new ClaimsIdentity(claims, "auth");
+            return new AuthenticationState(new ClaimsPrincipal(identity));
         }
-
-        var identity = new ClaimsIdentity(new[]
+        catch
         {
-            new Claim(ClaimTypes.NameIdentifier, userInfo.UserId.ToString()),
-            new Claim(ClaimTypes.Email, userInfo.Email)
-        }, "auth");
-
-        var user = new ClaimsPrincipal(identity);
-
-        return new AuthenticationState(user);
+            return new AuthenticationState(new ClaimsPrincipal(new ClaimsIdentity()));
+        }
     }
 
     public async Task SetUserAsync(UserInfo userInfo)
