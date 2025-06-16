@@ -1,215 +1,226 @@
 ﻿@page "/main"
 @inject NavigationManager Navigation
+@using Microsoft.AspNetCore.Components.Authorization
+@using Microsoft.Extensions.Logging
+@using MoneyFlowClient.Client.Models 
+@using System.Net.Http 
+@using System.Security.Claims
+@using System.Net
+@using System.Text.Json
+@using System.Text.Json.Serialization
+@inject HttpClient Http
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject IJSRuntime JSRuntime
 
 <style>
     /* Основные стили */
     :root {
-        --primary-color: #2e86de;
-        --sidebar-width: 110px; /* Уменьшил ширину сайдбара */
-        --header-height: 70px;
-        --card-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
-        --border-color: #eae6e6;
+    --primary-color: #2e86de;
+    --sidebar-width: 110px; /* Уменьшил ширину сайдбара */
+    --header-height: 70px;
+    --card-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+    --border-color: #eae6e6;
     }
 
     body {
-        margin: 0;
-        font-family: 'Inter', sans-serif;
-        background-color: #f8f9fd;
-        color: #000000;
+    margin: 0;
+    font-family: 'Inter', sans-serif;
+    background-color: #f8f9fd;
+    color: #000000;
     }
 
     /* Общая структура */
     .screen {
-        display: grid;
-        grid-template-columns: var(--sidebar-width) 1fr;
-        grid-template-rows: var(--header-height) 1fr;
-        min-height: 100vh;
+    display: grid;
+    grid-template-columns: var(--sidebar-width) 1fr;
+    grid-template-rows: var(--header-height) 1fr;
+    min-height: 100vh;
     }
 
     /* Шапка */
     .header {
-        grid-column: 2;
-        grid-row: 1;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 0 25px; /* Уменьшил отступы */
-        background: #ffffff;
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-        z-index: 100;
-        height: var(--header-height);
+    grid-column: 2;
+    grid-row: 1;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 25px; /* Уменьшил отступы */
+    background: #ffffff;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    z-index: 100;
+    height: var(--header-height);
     }
 
     .logo {
-        font-size: 24px;
-        font-weight: 700;
-        color: var(--primary-color);
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--primary-color);
     }
 
     /* Боковая панель с увеличенными иконками */
     .sidebar {
-        grid-column: 1;
-        grid-row: 1 / span 2;
-        background: #ffffff;
-        box-shadow: 1px 0 3px rgba(0, 0, 0, 0.1);
-        padding-top: 15px;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        z-index: 90;
+    grid-column: 1;
+    grid-row: 1 / span 2;
+    background: #ffffff;
+    box-shadow: 1px 0 3px rgba(0, 0, 0, 0.1);
+    padding-top: 15px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    z-index: 90;
     }
 
     .sidebar-item {
-        width: 100%;
-        padding: 25px 0; /* Увеличил отступы */
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: 10px;
-        cursor: pointer;
-        font-size: 12px;
-        color: #555;
-        transition: all 0.2s;
+    width: 100%;
+    padding: 25px 0; /* Увеличил отступы */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    font-size: 12px;
+    color: #555;
+    transition: all 0.2s;
     }
 
-        .sidebar-item:hover {
-            background: #f5f7ff;
-        }
+    .sidebar-item:hover {
+    background: #f5f7ff;
+    }
 
-        .sidebar-item.active {
-            color: var(--primary-color);
-            background: #f0f4ff;
-        }
+    .sidebar-item.active {
+    color: var(--primary-color);
+    background: #f0f4ff;
+    }
 
-        .sidebar-item img {
-            width: 60px; /* Увеличил иконки */
-            height: 60px;
-        }
+    .sidebar-item img {
+    width: 60px; /* Увеличил иконки */
+    height: 60px;
+    }
 
     /* Основное содержимое - смещено влево-вверх */
     .main-content {
-        grid-column: 2;
-        grid-row: 2;
-        padding: 15px 20px; /* Уменьшил отступы */
-        background-color: #f8f9fd;
-        margin-top: 0px; /* Сдвигаем вверх */
-        margin-left: 35px; /* Сдвигаем влево */
+    grid-column: 2;
+    grid-row: 2;
+    padding: 15px 20px; /* Уменьшил отступы */
+    background-color: #f8f9fd;
+    margin-top: 0px; /* Сдвигаем вверх */
+    margin-left: 35px; /* Сдвигаем влево */
     }
 
     .page-title {
-        font-size: 22px;
-        margin: 0 0 15px 0; /* Уменьшил отступы */
-        color: #000;
-        font-weight: 700;
+    font-size: 22px;
+    margin: 0 0 15px 0; /* Уменьшил отступы */
+    color: #000;
+    font-weight: 700;
     }
 
     /* Карточки */
     .dashboard-row {
-        display: flex;
-        gap: 15px; /* Уменьшил промежуток */
-        margin-bottom: 15px;
+    display: flex;
+    gap: 15px; /* Уменьшил промежуток */
+    margin-bottom: 15px;
     }
 
     .card {
-        background: #ffffff;
-        border-radius: 10px;
-        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
-        padding: 15px;
-        display: flex;
-        flex-direction: column;
+    background: #ffffff;
+    border-radius: 10px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+    padding: 15px;
+    display: flex;
+    flex-direction: column;
     }
 
     .wide-card {
-        flex: 3;
-        min-height: 300px; /* Уменьшенная высота */
+    flex: 3;
+    min-height: 300px; /* Уменьшенная высота */
     }
 
     .small-card {
-        flex: 1;
-        min-height: 300px; /* Уменьшенная высота */
+    flex: 1;
+    min-height: 300px; /* Уменьшенная высота */
     }
 
     .card-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 15px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
     }
 
-        .card-header h2 {
-            font-size: 16px;
-            margin: 0;
-            color: #000;
-            font-weight: 700;
-        }
+    .card-header h2 {
+    font-size: 16px;
+    margin: 0;
+    color: #000;
+    font-weight: 700;
+    }
 
 
     /* Элементы управления */
     .period-selector select {
-        padding: 6px 10px;
-        border: 1px solid #ddd;
-        border-radius: 6px;
-        background: white;
-        font-size: 12px;
-        cursor: pointer;
+    padding: 6px 10px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    background: white;
+    font-size: 12px;
+    cursor: pointer;
     }
 
     /* Контейнер для графиков */
     .chart-container {
-        flex-grow: 1;
-        position: relative;
-        min-height: 200px; /* Уменьшенная высота области графика */
+    flex-grow: 1;
+    position: relative;
+    min-height: 200px; /* Уменьшенная высота области графика */
     }
     /* Панель пользователя */
     .user-panel {
-        display: flex;
-        align-items: center;
-        gap: 15px;
+    display: flex;
+    align-items: center;
+    gap: 15px;
     }
 
     .balance {
-        text-align: right;
+    text-align: right;
     }
 
     .balance-label {
-        display: block;
-        font-size: 12px;
-        color: #666;
+    display: block;
+    font-size: 12px;
+    color: #666;
     }
 
     .balance-amount {
-        font-size: 16px;
-        font-weight: 700;
+    font-size: 16px;
+    font-weight: 700;
     }
 
     .avatar {
-        width: 40px;
-        height: 40px;
-        border-radius: 50%;
-        overflow: hidden;
-        cursor: pointer;
-        background: #eee;
-        display: flex;
-        align-items: center;
-        justify-content: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    overflow: hidden;
+    cursor: pointer;
+    background: #eee;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     }
 
-        .avatar img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
+    .avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    }
 
     /* Графики (заглушки) */
     .chart-placeholder {
-        background: #f9f9f9;
-        border-radius: 8px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: #999;
-        font-size: 14px;
-        height: 100%;
+    background: #f9f9f9;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #999;
+    font-size: 14px;
+    height: 100%;
     }
 </style>
 
@@ -220,7 +231,7 @@
         <div class="user-panel">
             <div class="balance">
                 <span class="balance-label">Баланс</span>
-                <span class="balance-amount">15 043 Р</span>
+                <span class="balance-amount">@(currentBalance?.ToString("N0") ?? "0") Р</span>
             </div>
             <div class="avatar" @onclick="NavigateToAccount">
                 <img src="img/avatar.svg" alt="Аватар" />
@@ -327,7 +338,21 @@
     </div>
 </div>
 
+<AuthorizeView>
+    <Authorized>
+        <!-- Ваш текущий контент страницы -->
+    </Authorized>
+    <NotAuthorized>
+        <div class="auth-message">
+            <p>Вы не авторизованы</p>
+            <button @onclick="RedirectToLogin">Войти</button>
+        </div>
+    </NotAuthorized>
+</AuthorizeView>
 @code {
+    private decimal? currentBalance;
+    private string? userId;
+
     private string selectedPeriod = "month";
     private string selectedTrendPeriod = "month";
     private string selectedMiniIncomePeriod = "month";
@@ -339,6 +364,57 @@
     private void NavigateToInvestments() => Navigation.NavigateTo("/investments");
     private void NavigateToAdmin() => Navigation.NavigateTo("/admin");
 
+    private async Task RedirectToLogin() => Navigation.NavigateTo("/login");
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        await ProcessAuthState(authState);
+    }
+
+    private async Task ProcessAuthState(AuthenticationState authState)
+    {
+        var user = authState.User;
+
+        if (user.Identity is { IsAuthenticated: true })
+        {
+            userId = user.FindFirst(c => c.Type == ClaimTypes.NameIdentifier)?.Value;
+            await JSRuntime.InvokeVoidAsync("console.log", $"Пользователь аутентифицирован: {userId}");
+
+            if (!string.IsNullOrEmpty(userId))
+                await LoadUserBalance();
+        }
+        else
+        {
+            await JSRuntime.InvokeVoidAsync("console.log", "Пользователь не аутентифицирован");
+        }
+    }
+
+    private async Task LoadUserBalance()
+    {
+        await JSRuntime.InvokeVoidAsync("console.log", $"Загружаю баланс для пользователя: {userId}");
+
+        try
+        {
+            if (string.IsNullOrEmpty(userId))
+            {
+                await JSRuntime.InvokeVoidAsync("console.error", "Нет userId для загрузки баланса.");
+                currentBalance = 0;
+                return;
+            }
+
+            var budget = await Http.GetFromJsonAsync<Budget>($"api/Budget/users/{userId}");
+            await JSRuntime.InvokeVoidAsync("console.log", $"Получен бюджет: {budget?.Amount}");
+
+            currentBalance = budget?.Amount ?? 0;
+        }
+        catch (Exception ex)
+        {
+            await JSRuntime.InvokeVoidAsync("console.error", $"Ошибка загрузки баланса: {ex.Message}");
+            currentBalance = 0;
+        }
+    }
+
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender)
@@ -349,6 +425,6 @@
 
     private async Task InitializeCharts()
     {
-        // Инициализация графиков
+        // инициализация графиков
     }
 }

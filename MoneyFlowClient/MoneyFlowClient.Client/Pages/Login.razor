@@ -1,6 +1,7 @@
 ﻿@page "/login"
 @inject HttpClient Http
 @inject NavigationManager Navigation
+@inject CustomAuthStateProvider AuthStateProvider
 
 <link href="css/login.css?v=2" rel="stylesheet" />
 
@@ -68,7 +69,19 @@
 
         if (response.IsSuccessStatusCode)
         {
-            NavigateToMain();
+            // Получаем данные пользователя из ответа
+            var userInfo = await response.Content.ReadFromJsonAsync<UserInfo>();
+
+            if (userInfo != null)
+            {
+                // Устанавливаем в localStorage и уведомляем систему
+                await AuthStateProvider.SetUserAsync(userInfo);
+                NavigateToMain();
+            }
+            else
+            {
+                message = "Ошибка получения данных пользователя.";
+            }
         }
         else
         {
