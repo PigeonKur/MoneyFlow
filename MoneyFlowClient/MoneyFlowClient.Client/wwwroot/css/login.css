@@ -129,21 +129,6 @@
         line-height: normal;
     }
 
-    .screen .button {
-        all: unset;
-        box-sizing: border-box;
-        display: flex;
-        width: 320px;
-        align-items: center;
-        justify-content: center;
-        padding: 14px 14px 15px;
-        position: absolute;
-        top: 289px;
-        left: 40px;
-        background-color: #2e86de;
-        border-radius: 8px;
-    }
-
     .screen .text-wrapper-4 {
         width: fit-content;
         font-family: "Inter-Regular", Helvetica;
@@ -202,6 +187,27 @@
         letter-spacing: 0;
         line-height: normal;
     }
+    .screen .button {
+        all: unset;
+        box-sizing: border-box;
+        display: flex;
+        width: 320px;
+        align-items: center;
+        justify-content: center;
+        padding: 14px 14px 15px;
+        position: absolute;
+        top: 289px;
+        left: 40px;
+        background-color: #2e86de;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: background-color 0.3s ease;
+    }
+
+        .screen .button:hover {
+            background-color: #1b64b4;
+        }
+
 
 .form-control-blazor {
     border: none;
@@ -286,7 +292,5 @@
 
 }
 
-.screen .button:hover {
-    background-color: #1b64b4;
-    transition: background-color 0.3s ease;
-}
+
+

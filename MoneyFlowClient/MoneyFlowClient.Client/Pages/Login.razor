@@ -2,7 +2,7 @@
 @inject HttpClient Http
 @inject NavigationManager Navigation
 
-<link href="css/login.css" rel="stylesheet" />
+<link href="css/login.css?v=2" rel="stylesheet" />
 
 <div class="screen">
     <div class="background-shadow">
@@ -18,9 +18,8 @@
         <div class="input" style="top: 221px;">
             <input type="password" @bind="loginModel.Password" placeholder="Пароль" class="input-field" />
         </div>
-        <button class="button" @onclick="LoginUser">
-            <div class="text-wrapper-4">Войти</div>
-        </button>
+        <button class="button" @onclick="LoginUser">Войти</button>
+
 
         <div class="container-2">
             <div class="text-wrapper-5">Нет аккаунта?</div>
