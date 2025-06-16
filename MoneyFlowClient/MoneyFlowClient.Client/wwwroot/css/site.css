@@ -1,4 +1,4 @@
-﻿* {
+﻿/** {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
@@ -10,8 +10,7 @@ body {
     color: #000000;
 }
 
-/* Header */
-.header {
+ .header {
     position: fixed;
     top: 0;
     left: 0;
@@ -78,8 +77,7 @@ body {
         background-color: #1e6bb8;
     }
 
-/* Sidebar */
-.sidebar {
+ .sidebar {
     position: fixed;
     top: 92px;
     left: 0;
@@ -113,7 +111,7 @@ body {
         text-align: center;
     }
 
-/* Main Content */
+
 .main-content {
     margin-left: 181px;
     margin-top: 92px;
@@ -126,12 +124,6 @@ body {
     margin-bottom: 20px;
     padding-bottom: 10px;
     border-bottom: 1px solid #eae6e6;
-}
-
-.dashboard-row {
-    display: flex;
-    gap: 30px;
-    margin-bottom: 30px;
 }
 
 .card {
@@ -204,3 +196,10 @@ body {
     color: #888;
     font-size: 18px;
 }
+
+.dashboard-row {
+    display: flex;
+    gap: 30px;
+    margin-bottom: 30px;
+    padding-left: 20px;*/ /* вот сюда добавляем отступ */
+/*}*/

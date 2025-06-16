@@ -1,124 +1,154 @@
 ﻿@page "/"
 @inject NavigationManager Navigation
 
+<link href="css/site.css" rel="stylesheet" />
 
-    <!-- Header -->
-    <div class="header">
-        <div class="logo">MoneyFlow</div>
-        <div class="auth-buttons">
-        <button @onclick="NavigateToLogin" class="login-btn">Войти</button>
-        <button @onclick="NavigateToRegister" class="register-btn">Регистрация</button>
+<style>
+    /* Основные стили */
+    body {
+        margin: 0;
+        font-family: Arial, sans-serif;
+        background: #f5f5f5;
+        padding: 0 20px; /* Добавил отступы по бокам для всего контента */
+    }
+
+    .dashboard-container {
+        max-width: none; /* Убрал ограничение по ширине */
+        margin: 0;
+        padding: 20px 0; /* Оставил только вертикальные отступы */
+    }
+
+    .page-title {
+        font-size: 24px;
+        margin-bottom: 20px;
+        padding-left: 10px;
+    }
+
+    .dashboard-row {
+        display: flex;
+        gap: 20px;
+        margin-bottom: 20px;
+        width: 100%;
+    }
+
+    /* Карточки */
+    .card {
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        padding: 20px;
+        width: 100%;
+        display: flex;
+        flex-direction: column; /* Чтобы контент внутри карточки правильно растягивался */
+    }
+
+    .wide-card {
+        flex: 4; /* Еще больше увеличил пропорцию */
+    }
+
+    .small-card {
+        flex: 1;
+        min-height: 400px; /* Фиксированная высота для маленьких карточек */
+    }
+
+    .card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 15px;
+    }
+
+    .period-selector {
+        display: flex;
+        gap: 10px;
+    }
+
+    .period-btn {
+        background: none;
+        border: 1px solid #ddd;
+        padding: 5px 10px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 13px;
+    }
+
+    .amount {
+        font-size: 24px;
+        font-weight: bold;
+        margin: 10px 0 5px 0; /* Уменьшил отступ снизу */
+    }
+
+    .amount-label {
+        color: #666;
+        margin-bottom: 15px;
+        font-size: 14px;
+    }
+
+    .chart-placeholder {
+        background: #f9f9f9;
+        flex-grow: 1; /* Растягиваем график на все доступное пространство */
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #888;
+        border-radius: 4px;
+        margin-top: 10px;
+        min-height: 200px; /* Минимальная высота */
+    }
+</style>
+
+<!-- Основной контейнер (как в Figma) -->
+<div class="dashboard-container">
+    <h1 class="page-title">Рабочий стол</h1>
+
+    <!-- Первый ряд: широкая карточка + узкая -->
+    <div class="dashboard-row">
+        <div class="card wide-card">
+            <div class="card-header">
+                <h2>Доходы и расходы</h2>
+                <div class="period-selector">
+                    <button class="period-btn">Год ▼</button>
+                    <button class="period-btn">Период ▼</button>
+                </div>
+            </div>
+            <div class="chart-placeholder">График доходов и расходов</div>
+        </div>
+
+        <div class="card small-card">
+            <div class="card-header">
+                <h2>Поступления за период</h2>
+                <button class="period-btn">Период ▼</button>
+            </div>
+            <div class="amount">4 500 ₽</div>
+            <div class="amount-label">Поступления за период</div>
+            <div class="chart-placeholder">График поступлений</div>
         </div>
     </div>
 
-    <!-- Sidebar -->
-    <div class="sidebar">
-        <div class="sidebar-item">
-            <img src="img/history-icon.png" alt="История">
-            <span>История</span>
+    <!-- Второй ряд: широкая карточка + узкая -->
+    <div class="dashboard-row">
+        <div class="card wide-card">
+            <div class="card-header">
+                <h2>Динамика остатков денег</h2>
+                <div class="period-selector">
+                    <button class="period-btn">Год ▼</button>
+                    <button class="period-btn">Период ▼</button>
+                </div>
+            </div>
+            <div class="chart-placeholder">График динамики остатков</div>
         </div>
-        <div class="sidebar-item">
-            <img src="img/transfers-icon.png" alt="Переводы">
-            <span>Переводы</span>
-        </div>
-        <div class="sidebar-item">
-            <img src="img/investments-icon.png" alt="Инвестиции">
-            <span>Инвестиции</span>
-        </div>
-        <div class="sidebar-item">
-            <img src="img/admin-icon.png" alt="Админ-панель">
-            <span>Админ-панель</span>
+
+        <div class="card small-card">
+            <div class="card-header">
+                <h2>Расходы за период</h2>
+                <button class="period-btn">Период ▼</button>
+            </div>
+            <div class="amount">2 423 ₽</div>
+            <div class="amount-label">Расходы за период</div>
+            <div class="chart-placeholder">График расходов</div>
         </div>
     </div>
-
-    <!-- Main Content -->
-    <div class="main-content">
-        <h1 class="page-title">Рабочий стол</h1>
-
-        <div class="dashboard-row">
-            <div class="card wide-card">
-                <div class="card-header">
-                    <h2 class="card-title">Доходы и расходы</h2>
-                    <div class="period-selector">
-                        <button class="period-btn">
-                            Год
-                            <svg width="9" height="8" viewBox="0 0 9 8" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                <path d="M1 1L4.5 7L8 1" stroke="black" />
-                            </svg>
-                        </button>
-                        <button class="period-btn">
-                            Период
-                            <svg width="9" height="8" viewBox="0 0 9 8" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                <path d="M1 1L4.5 7L8 1" stroke="black" />
-                            </svg>
-                        </button>
-                    </div>
-                </div>
-                <div class="chart-placeholder">
-                    График доходов и расходов
-                </div>
-            </div>
-
-            <div class="card small-card">
-                <div class="card-header">
-                    <h2 class="card-title">Поступления за период</h2>
-                    <button class="period-btn">
-                        Период
-                        <svg width="9" height="8" viewBox="0 0 9 8" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M1 1L4.5 7L8 1" stroke="black" />
-                        </svg>
-                    </button>
-                </div>
-                <div class="amount">4 500 Р</div>
-                <div class="amount-label">Поступления за период</div>
-                <div class="chart-placeholder" style="height: 200px;">
-                    График поступлений
-                </div>
-            </div>
-        </div>
-
-        <div class="dashboard-row">
-            <div class="card wide-card">
-                <div class="card-header">
-                    <h2 class="card-title">Динамика остатков денег на счете</h2>
-                    <div class="period-selector">
-                        <button class="period-btn">
-                            Год
-                            <svg width="9" height="8" viewBox="0 0 9 8" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                <path d="M1 1L4.5 7L8 1" stroke="black" />
-                            </svg>
-                        </button>
-                        <button class="period-btn">
-                            Период
-                            <svg width="9" height="8" viewBox="0 0 9 8" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                <path d="M1 1L4.5 7L8 1" stroke="black" />
-                            </svg>
-                        </button>
-                    </div>
-                </div>
-                <div class="chart-placeholder">
-                    График динамики остатков
-                </div>
-            </div>
-
-            <div class="card small-card">
-                <div class="card-header">
-                    <h2 class="card-title">Расходы за период</h2>
-                    <button class="period-btn">
-                        Период
-                        <svg width="9" height="8" viewBox="0 0 9 8" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M1 1L4.5 7L8 1" stroke="black" />
-                        </svg>
-                    </button>
-                </div>
-                <div class="amount">2 423 Р</div>
-                <div class="amount-label">Расходы за период</div>
-                <div class="chart-placeholder" style="height: 200px;">
-                    График расходов
-                </div>
-            </div>
-        </div>
-    </div>
+</div>
 
 @code {
     private void NavigateToLogin()
