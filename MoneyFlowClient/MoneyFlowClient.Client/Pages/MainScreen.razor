@@ -239,6 +239,7 @@
         </div>
     </div>
 
+
     <!-- Боковая панель с увеличенными иконками -->
     <div class="sidebar">
         <div class="sidebar-item active" @onclick="NavigateToHistory">
@@ -253,12 +254,17 @@
             <img src="img/investments-icon.svg" alt="Инвестиции" />
             <span>Инвестиции</span>
         </div>
-        <div class="sidebar-item" @onclick="NavigateToAdmin">
-            <img src="img/admin-icon.svg" alt="Админ-панель" />
-            <span>Админ-панель</span>
-        </div>
+
+        @if (isAdmin)
+        {
+            <div class="sidebar-item" @onclick="NavigateToAdmin">
+                <img src="img/admin-icon.svg" alt="Админ-панель" />
+                <span>Админ-панель</span>
+            </div>
+        }
     </div>
 
+   
     <!-- Основное содержимое -->
     <div class="main-content">
         <h1 class="page-title">Рабочий стол</h1>
@@ -340,7 +346,6 @@
 
 <AuthorizeView>
     <Authorized>
-        <!-- Ваш текущий контент страницы -->
     </Authorized>
     <NotAuthorized>
         <div class="auth-message">
@@ -363,32 +368,46 @@
     private void NavigateToTransfers() => Navigation.NavigateTo("/transfers");
     private void NavigateToInvestments() => Navigation.NavigateTo("/investments");
     private void NavigateToAdmin() => Navigation.NavigateTo("/admin");
-
-    private async Task RedirectToLogin() => Navigation.NavigateTo("/login");
+    
+    private bool isAdmin = false;
+    private ClaimsPrincipal? user;
 
     protected override async Task OnInitializedAsync()
     {
         var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        user = authState.User;
         await ProcessAuthState(authState);
     }
 
     private async Task ProcessAuthState(AuthenticationState authState)
     {
-        var user = authState.User;
+        user = authState.User;
 
         if (user.Identity is { IsAuthenticated: true })
         {
-            userId = user.FindFirst(c => c.Type == ClaimTypes.NameIdentifier)?.Value;
-            await JSRuntime.InvokeVoidAsync("console.log", $"Пользователь аутентифицирован: {userId}");
+            userId = user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+            // Получаем роль из claims
+            var roleClaim = user.FindFirst(ClaimTypes.Role)?.Value;
+            isAdmin = roleClaim == "1"; // Проверяем, является ли администратором
+
+            await JSRuntime.InvokeVoidAsync("console.log",
+                $"User ID: {userId}, Role: {roleClaim}, IsAdmin: {isAdmin}");
 
             if (!string.IsNullOrEmpty(userId))
                 await LoadUserBalance();
         }
         else
         {
-            await JSRuntime.InvokeVoidAsync("console.log", "Пользователь не аутентифицирован");
+            isAdmin = false;
+            await JSRuntime.InvokeVoidAsync("console.log", "User not authenticated");
         }
+
+        StateHasChanged();
     }
+
+    private async Task RedirectToLogin() => Navigation.NavigateTo("/login");
+
 
     private async Task LoadUserBalance()
     {
@@ -436,3 +455,15 @@
         // инициализация графиков
     }
 }
+
+@* добавить в админку *@
+@*             protected override async Task OnInitializedAsync() *@
+@* { *@
+@*     var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync(); *@
+@*     var user = authState.User; *@
+
+@*     if (!user.Identity.IsAuthenticated) *@
+@*     { *@
+@*         Navigation.NavigateTo("/login"); *@
+@*     } *@
+@* } *@

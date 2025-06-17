@@ -69,18 +69,19 @@
 
         if (response.IsSuccessStatusCode)
         {
-            // Получаем данные пользователя из ответа
-            var userInfo = await response.Content.ReadFromJsonAsync<UserInfo>();
+            var result = await response.Content.ReadFromJsonAsync<AuthResponse>();
 
-            if (userInfo != null)
+            if (result != null)
             {
-                // Устанавливаем в localStorage и уведомляем систему
+                var userInfo = new UserInfo
+                    {
+                        UserId = result.UserId,
+                        Email = result.Email,
+                        RoleId = result.RoleId // Сохраняем роль
+                    };
+
                 await AuthStateProvider.SetUserAsync(userInfo);
                 NavigateToMain();
-            }
-            else
-            {
-                message = "Ошибка получения данных пользователя.";
             }
         }
         else

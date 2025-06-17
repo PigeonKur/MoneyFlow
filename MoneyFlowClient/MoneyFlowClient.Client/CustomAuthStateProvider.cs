@@ -27,7 +27,8 @@ public class CustomAuthStateProvider : AuthenticationStateProvider
             var userInfo = JsonSerializer.Deserialize<UserInfo>(userJson);
             var claims = new List<Claim>
         {
-            new Claim(ClaimTypes.NameIdentifier, userInfo.UserId.ToString())
+            new Claim(ClaimTypes.NameIdentifier, userInfo.UserId.ToString()),
+            new Claim(ClaimTypes.Role, userInfo.RoleId.ToString()) // Добавляем роль в claims
         };
 
             if (!string.IsNullOrEmpty(userInfo.Email))
@@ -38,8 +39,9 @@ public class CustomAuthStateProvider : AuthenticationStateProvider
             var identity = new ClaimsIdentity(claims, "auth");
             return new AuthenticationState(new ClaimsPrincipal(identity));
         }
-        catch
+        catch (Exception ex)
         {
+            await _jsRuntime.InvokeVoidAsync("console.error", $"Ошибка десериализации: {ex.Message}");
             return new AuthenticationState(new ClaimsPrincipal(new ClaimsIdentity()));
         }
     }
@@ -62,4 +64,6 @@ public class UserInfo
 {
     public int UserId { get; set; }
     public string Email { get; set; }
+    public int RoleId { get; set; } 
+
 }
