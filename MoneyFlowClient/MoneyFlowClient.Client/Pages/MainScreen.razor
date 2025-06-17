@@ -358,6 +358,9 @@
     private decimal? currentBalance;
     private string? userId;
 
+    private bool isAdmin = false;
+    private ClaimsPrincipal? user;
+
     private string selectedPeriod = "month";
     private string selectedTrendPeriod = "month";
     private string selectedMiniIncomePeriod = "month";
@@ -368,9 +371,8 @@
     private void NavigateToTransfers() => Navigation.NavigateTo("/transfers");
     private void NavigateToInvestments() => Navigation.NavigateTo("/investments");
     private void NavigateToAdmin() => Navigation.NavigateTo("/admin");
-    
-    private bool isAdmin = false;
-    private ClaimsPrincipal? user;
+    private async Task RedirectToLogin() => Navigation.NavigateTo("/login");
+
 
     protected override async Task OnInitializedAsync()
     {
@@ -389,7 +391,7 @@
 
             // Получаем роль из claims
             var roleClaim = user.FindFirst(ClaimTypes.Role)?.Value;
-            isAdmin = roleClaim == "1"; // Проверяем, является ли администратором
+            isAdmin = roleClaim == "1"; 
 
             await JSRuntime.InvokeVoidAsync("console.log",
                 $"User ID: {userId}, Role: {roleClaim}, IsAdmin: {isAdmin}");
@@ -400,14 +402,11 @@
         else
         {
             isAdmin = false;
-            await JSRuntime.InvokeVoidAsync("console.log", "User not authenticated");
+            await JSRuntime.InvokeVoidAsync("console.log", "Пользователь не авторизирован");
         }
 
         StateHasChanged();
     }
-
-    private async Task RedirectToLogin() => Navigation.NavigateTo("/login");
-
 
     private async Task LoadUserBalance()
     {

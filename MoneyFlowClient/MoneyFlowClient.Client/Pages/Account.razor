@@ -1,0 +1,464 @@
+﻿@page "/account"
+@inject NavigationManager Navigation
+@using Microsoft.AspNetCore.Components.Authorization
+@using System.Security.Claims
+@using System.Text.Json
+@using System.Text.Json.Serialization
+@inject HttpClient Http
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject IJSRuntime JSRuntime
+
+<link href="css/account.css" rel="stylesheet" />
+
+<style>
+    /* Основные стили (такие же как в MainScreen) */
+    :root {
+        --primary-color: #2e86de;
+        --sidebar-width: 110px;
+        --header-height: 70px;
+        --card-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+        --border-color: #eae6e6;
+    }
+
+    body {
+        margin: 0;
+        font-family: 'Inter', sans-serif;
+        background-color: #f8f9fd;
+        color: #000000;
+    }
+
+    /* Общая структура */
+    .screen {
+        display: grid;
+        grid-template-columns: var(--sidebar-width) 1fr;
+        grid-template-rows: var(--header-height) 1fr;
+        min-height: 100vh;
+    }
+
+    /* Шапка (точно такая же как в MainScreen) */
+    .header {
+        grid-column: 2;
+        grid-row: 1;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0 25px;
+        background: #ffffff;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        z-index: 100;
+        height: var(--header-height);
+    }
+
+    .logo {
+        font-size: 24px;
+        font-weight: 700;
+        color: var(--primary-color);
+    }
+
+    /* Боковая панель (точно такая же как в MainScreen) */
+    .sidebar {
+        grid-column: 1;
+        grid-row: 1 / span 2;
+        background: #ffffff;
+        box-shadow: 1px 0 3px rgba(0, 0, 0, 0.1);
+        padding-top: 15px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        z-index: 90;
+    }
+
+    .sidebar-item {
+        width: 100%;
+        padding: 25px 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 10px;
+        cursor: pointer;
+        font-size: 12px;
+        color: #555;
+        transition: all 0.2s;
+    }
+
+        .sidebar-item:hover {
+            background: #f5f7ff;
+        }
+
+        .sidebar-item.active {
+            color: var(--primary-color);
+            background: #f0f4ff;
+        }
+
+        .sidebar-item img {
+            width: 60px;
+            height: 60px;
+        }
+
+    /* Основное содержимое страницы Account */
+    .account-content {
+        grid-column: 2;
+        grid-row: 2;
+        padding: 30px;
+        background-color: #f8f9fd;
+    }
+
+    /* Стили для карточек в Account */
+    .account-card {
+        background: white;
+        border-radius: 10px;
+        padding: 20px;
+        margin-bottom: 20px;
+        box-shadow: var(--card-shadow);
+    }
+
+    .account-header {
+        font-size: 18px;
+        font-weight: 700;
+        margin-bottom: 15px;
+    }
+
+    .accounts-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 15px;
+        margin-top: 20px;
+    }
+
+    .account-item {
+        background: white;
+        border-radius: 10px;
+        padding: 15px;
+        box-shadow: var(--card-shadow);
+        display: flex;
+        align-items: center;
+    }
+
+    .account-icon {
+        font-size: 24px;
+        margin-right: 15px;
+    }
+
+    .account-details {
+        flex: 1;
+    }
+
+    .account-amount {
+        font-weight: 700;
+        font-size: 16px;
+    }
+
+    .account-description {
+        color: #666;
+        font-size: 14px;
+    }
+
+    /* Панель пользователя (точно такая же как в MainScreen) */
+    .user-panel {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+    }
+
+    .balance {
+        text-align: right;
+    }
+
+    .balance-label {
+        display: block;
+        font-size: 12px;
+        color: #666;
+    }
+
+    .balance-amount {
+        font-size: 16px;
+        font-weight: 700;
+    }
+
+    .avatar {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        overflow: hidden;
+        cursor: pointer;
+        background: #eee;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+        .avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+    /* Действия (настройки, выход) */
+    .account-actions {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 15px;
+        margin-top: 20px;
+    }
+
+    .action-item {
+        background: white;
+        border-radius: 10px;
+        padding: 15px;
+        box-shadow: var(--card-shadow);
+        display: flex;
+        align-items: center;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+        .action-item:hover {
+            background: #f5f7ff;
+        }
+
+        .action-item.logout {
+            color: #e74c3c;
+        }
+
+    .action-icon {
+        margin-right: 10px;
+        font-size: 20px;
+    }
+</style>
+
+<div class="screen">
+    <!-- Шапка (точно такая же как в MainScreen) -->
+    <div class="header">
+        <div class="logo" @onclick="NavigateToMain">MoneyFlow</div> 
+        <div class="user-panel">
+            <div class="balance">
+                <span class="balance-label">Баланс</span>
+                <span class="balance-amount">@(currentBalance?.ToString("N0") ?? "0") ₽</span>
+            </div>
+            <div class="avatar" @onclick="NavigateToAccount">
+                <img src="img/avatar.svg" alt="Аватар" />
+            </div>
+        </div>
+    </div>
+
+    <!-- Боковая панель (точно такая же как в MainScreen) -->
+    <div class="sidebar">
+        <div class="sidebar-item active" @onclick="NavigateToHistory">
+            <img src="img/history-icon.svg" alt="История" />
+            <span>История</span>
+        </div>
+        <div class="sidebar-item" @onclick="NavigateToTransfers">
+            <img src="img/transfers-icon.svg" alt="Переводы" />
+            <span>Переводы</span>
+        </div>
+        <div class="sidebar-item" @onclick="NavigateToInvestments">
+            <img src="img/investments-icon.svg" alt="Инвестиции" />
+            <span>Инвестиции</span>
+        </div>
+
+        @if (isAdmin)
+        {
+            <div class="sidebar-item" @onclick="NavigateToAdmin">
+                <img src="img/admin-icon.svg" alt="Админ-панель" />
+                <span>Админ-панель</span>
+            </div>
+        }
+    </div>
+
+    <!-- Основное содержимое страницы Account -->
+    <div class="account-content">
+        <!-- Имя пользователя -->
+        <div class="account-card">
+            <div style="display: flex; align-items: center;">
+                <div class="avatar" style="width: 60px; height: 60px; margin-right: 20px;">
+                    <img src="img/avatar.svg" alt="Аватар" />
+                </div>
+                <div>
+                    <h2 style="margin: 0; font-size: 20px;">@UserName</h2>
+                </div>
+            </div>
+        </div>
+
+        <!-- Блок счетов -->
+        <div class="account-card">
+            <div class="account-header">Ваши счета</div>
+            <div class="accounts-grid">
+                <div class="account-item">
+                    <div class="account-icon">💳</div>
+                    <div class="account-details">
+                        <div class="account-amount">355,61 ₽</div>
+                        <div class="account-description">Счет •• 5522</div>
+                    </div>
+                </div>
+                <div class="account-item">
+                    <div class="account-icon">💰</div>
+                    <div class="account-details">
+                        <div class="account-amount">25 000 ₽</div>
+                        <div class="account-description">Инвестиция</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Блок выгоды -->
+        <div class="account-card">
+            <div style="display: flex; align-items: center;">
+                <div style="font-size: 24px; margin-right: 15px;">📈</div>
+                <div>
+                    Ваша выгода в инвестициях за май 2025: <strong>3 800 ₽</strong>
+                </div>
+            </div>
+        </div>
+
+        <!-- Действия -->
+        <div class="account-actions">
+            <div class="action-item" @onclick="OpenSettings">
+                <div class="action-icon">⚙️</div>
+                <div>Настройки</div>
+            </div>
+            <div class="action-item logout" @onclick="Logout">
+                <img src="img/logout-icon.svg" />
+                <div style="margin-left: 10px;">Выйти из аккаунта</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+
+    private decimal? currentBalance;
+    private string? userId;
+    private bool isAdmin = false;
+    private ClaimsPrincipal? user;
+    private string UserName = "Андрей Григорьев";
+    private decimal InvestmentAmount;
+    private decimal InvestmentProfit;
+
+    public class UserData
+    {
+        public string Name { get; set; }
+        public decimal Investments { get; set; }
+        public decimal MonthlyProfit { get; set; }
+    }
+    public class Budget
+    {
+        public decimal Amount { get; set; }
+    }
+
+    // Методы навигации
+    private void NavigateToHistory() => Navigation.NavigateTo("/history");
+    private void NavigateToTransfers() => Navigation.NavigateTo("/transfers");
+    private void NavigateToInvestments() => Navigation.NavigateTo("/investments");
+    private void NavigateToAdmin() => Navigation.NavigateTo("/admin");
+
+
+    private void OpenSettings() => Navigation.NavigateTo("/settings");
+
+    private async Task Logout()
+    {
+        if (AuthenticationStateProvider is CustomAuthStateProvider customProvider)
+        {
+            await customProvider.LogoutAsync();
+        }
+        Navigation.NavigateTo("/login");
+    }
+
+    private void NavigateToMain()
+    {
+        Navigation.NavigateTo("/main");
+    }
+    private void NavigateToAccount()
+    {
+        Navigation.NavigateTo("/account");
+    }
+
+    //логика 
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        user = authState.User;
+        await ProcessAuthState(authState);
+        
+        // Загрузка данных пользователя
+        var userData = await GetCurrentUserAsync();
+        if (userData != null)
+        {
+            UserName = userData.Name;
+            InvestmentAmount = userData.Investments;
+            InvestmentProfit = userData.MonthlyProfit;
+        }
+    }
+
+    private async Task ProcessAuthState(AuthenticationState authState)
+    {
+        user = authState.User;
+
+        if (user.Identity is { IsAuthenticated: true })
+        {
+            userId = user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var roleClaim = user.FindFirst(ClaimTypes.Role)?.Value;
+            isAdmin = roleClaim == "1";
+
+            await JSRuntime.InvokeVoidAsync("console.log",
+                $"User ID: {userId}, Role: {roleClaim}, IsAdmin: {isAdmin}");
+
+            if (!string.IsNullOrEmpty(userId))
+                await LoadUserBalance();
+        }
+        else
+        {
+            isAdmin = false;
+            await JSRuntime.InvokeVoidAsync("console.log", "User not authenticated");
+        }
+
+        StateHasChanged();
+    }
+
+    private async Task LoadUserBalance()
+    {
+        try
+        {
+            var response = await Http.GetAsync($"api/Budget/users/{userId}");
+            if (response.IsSuccessStatusCode)
+            {
+                var content = await response.Content.ReadAsStringAsync();
+                var options = new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true,
+                    NumberHandling = JsonNumberHandling.AllowReadingFromString
+                };
+
+                var budget = JsonSerializer.Deserialize<Budget>(content, options);
+                currentBalance = budget?.Amount ?? 0;
+            }
+        }
+        catch (Exception ex)
+        {
+            await JSRuntime.InvokeVoidAsync("console.error", $"Ошибка загрузки баланса: {ex.Message}");
+        }
+        finally
+        {
+            StateHasChanged();
+        }
+    }
+
+    private async Task<UserData> GetCurrentUserAsync()
+    {
+        try
+        {
+            var response = await Http.GetAsync($"api/UserAccount/{userId}");
+            if (response.IsSuccessStatusCode)
+            {
+                return await response.Content.ReadFromJsonAsync<UserData>();
+            }
+            await JSRuntime.InvokeVoidAsync("console.error", $"Ошибка: {response.StatusCode}");
+        }
+        catch (Exception ex)
+        {
+            await JSRuntime.InvokeVoidAsync("console.error", $"Ошибка: {ex.Message}");
+        }
+        return null;
+    }
+
+
+}
