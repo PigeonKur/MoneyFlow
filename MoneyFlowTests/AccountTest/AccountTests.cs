@@ -1,17 +1,11 @@
-﻿using Xunit;
-using Bunit;
-using Microsoft.AspNetCore.Components;
-using MoneyFlowClient.Client.Pages;
+﻿using Bunit;
 using Bunit.TestDoubles;
-using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
-using System.Text.Json;
-using System.Security.Claims;
-using Bunit.JSInterop;
+using MoneyFlowClient.Client.Pages;
 using Moq;
 using Moq.Protected;
-using System.Net.Http;
 using System.Net;
+using System.Security.Claims;
 
 namespace MoneyFlowTests.AccountTest
 {

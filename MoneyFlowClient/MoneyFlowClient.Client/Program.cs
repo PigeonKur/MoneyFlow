@@ -1,10 +1,6 @@
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
-using System;
-using System.Net.Http;
-using System.Threading.Tasks;
-using static MoneyFlowClient.Client.Pages.MainScreen;
 
 namespace MoneyFlowClient.Client
 {

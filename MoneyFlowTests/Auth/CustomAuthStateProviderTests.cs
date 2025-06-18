@@ -1,10 +1,7 @@
-﻿using Xunit;
-using Microsoft.JSInterop;
-using System.Text.Json;
-using System.Threading.Tasks;
+﻿using Microsoft.JSInterop;
 using Moq;
-using Microsoft.AspNetCore.Components.Authorization;
 using System.Security.Claims;
+using System.Text.Json;
 
 namespace MoneyFlowTests.Auth
 {
