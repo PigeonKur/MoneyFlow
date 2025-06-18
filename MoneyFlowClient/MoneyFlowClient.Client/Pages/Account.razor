@@ -330,7 +330,7 @@
     private string? userId;
     private bool isAdmin = false;
     private ClaimsPrincipal? user;
-    private string UserName = "Андрей Григорьев";
+    private string UserName;
     private decimal InvestmentAmount;
     private decimal InvestmentProfit;
 
@@ -350,9 +350,9 @@
     private void NavigateToTransfers() => Navigation.NavigateTo("/transfers");
     private void NavigateToInvestments() => Navigation.NavigateTo("/investments");
     private void NavigateToAdmin() => Navigation.NavigateTo("/admin");
-
-
     private void OpenSettings() => Navigation.NavigateTo("/settings");
+    private void NavigateToMain() => Navigation.NavigateTo("/main");
+    private void NavigateToAccount() => Navigation.NavigateTo("/account");
 
     private async Task Logout()
     {
@@ -362,15 +362,7 @@
         }
         Navigation.NavigateTo("/login");
     }
-
-    private void NavigateToMain()
-    {
-        Navigation.NavigateTo("/main");
-    }
-    private void NavigateToAccount()
-    {
-        Navigation.NavigateTo("/account");
-    }
+     
 
     //логика 
     protected override async Task OnInitializedAsync()
@@ -459,6 +451,4 @@
         }
         return null;
     }
-
-
 }

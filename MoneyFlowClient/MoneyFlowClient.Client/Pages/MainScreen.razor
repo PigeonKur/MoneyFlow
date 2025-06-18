@@ -354,13 +354,12 @@
         </div>
     </NotAuthorized>
 </AuthorizeView>
+
 @code {
     private decimal? currentBalance;
     private string? userId;
-
     private bool isAdmin = false;
     private ClaimsPrincipal? user;
-
     private string selectedPeriod = "month";
     private string selectedTrendPeriod = "month";
     private string selectedMiniIncomePeriod = "month";
