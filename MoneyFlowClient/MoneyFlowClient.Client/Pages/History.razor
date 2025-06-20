@@ -1,0 +1,681 @@
+﻿@page "/history"
+@inject NavigationManager Navigation
+@using Microsoft.AspNetCore.Components.Authorization
+@using Microsoft.Extensions.Logging
+@using MoneyFlowClient.Client.Models
+@using System.Net.Http
+@using System.Security.Claims
+@using System.Net
+@using System.Text.Json
+@using System.Text.Json.Serialization
+@inject HttpClient Http
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject IJSRuntime JSRuntime
+
+<style>
+	/* Основные стили */
+	:root {
+		--primary-color: #2e86de;
+		--sidebar-width: 110px;
+		--header-height: 70px;
+		--card-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+		--border-color: #eae6e6;
+		--income-color: #1e9c4b;
+		--expense-color: #d22727;
+		--text-color: #555555;
+		--light-text: #888888;
+	}
+
+	body {
+		margin: 0;
+		font-family: 'Inter', sans-serif;
+		background-color: #f8f9fd;
+		color: #000000;
+	}
+
+	/* Общая структура */
+	.screen {
+		display: grid;
+		grid-template-columns: var(--sidebar-width) 1fr;
+		grid-template-rows: var(--header-height) 1fr;
+		min-height: 100vh;
+	}
+
+	/* Шапка */
+	.header {
+		grid-column: 2;
+		grid-row: 1;
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		padding: 0 25px;
+		background: #ffffff;
+		box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+		z-index: 100;
+		height: var(--header-height);
+	}
+
+	.logo {
+		font-size: 24px;
+		font-weight: 700;
+		color: var(--primary-color);
+		cursor: pointer;
+	}
+
+	/* Боковая панель */
+	.sidebar {
+		grid-column: 1;
+		grid-row: 1 / span 2;
+		background: #ffffff;
+		box-shadow: 1px 0 3px rgba(0, 0, 0, 0.1);
+		padding-top: 15px;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		z-index: 90;
+	}
+
+	.sidebar-item {
+		width: 100%;
+		padding: 25px 0;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 10px;
+		cursor: pointer;
+		font-size: 12px;
+		color: #555;
+		transition: all 0.2s;
+	}
+
+		.sidebar-item:hover {
+			background: #f5f7ff;
+		}
+
+		.sidebar-item.active {
+			color: var(--primary-color);
+			background: #f0f4ff;
+		}
+
+		.sidebar-item img {
+			width: 60px;
+			height: 60px;
+		}
+
+	/* Основное содержимое */
+	.main-content {
+		grid-column: 2;
+		grid-row: 2;
+		padding: 15px 20px;
+		background-color: #f8f9fd;
+		margin-top: 0px;
+		margin-left: 35px;
+	}
+
+	.page-title {
+		font-size: 22px;
+		margin: 0 0 35px 0;
+		color: #000;
+		font-weight: 700;
+	}
+
+	.user-panel {
+		display: flex;
+		align-items: center;
+		gap: 15px;
+	}
+
+	.balance {
+		text-align: right;
+	}
+
+	.balance-label {
+		display: block;
+		font-size: 12px;
+		color: #666;
+	}
+
+	.balance-amount {
+		font-size: 16px;
+		font-weight: 700;
+	}
+
+	.avatar {
+		width: 40px;
+		height: 40px;
+		border-radius: 50%;
+		overflow: hidden;
+		cursor: pointer;
+		background: #eee;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+	}
+
+		.avatar img {
+			width: 100%;
+			height: 100%;
+			object-fit: cover;
+		}
+
+	/* Стили для истории операций */
+	.history-container {
+		background: linear-gradient(148deg, rgba(234, 238, 252, 1) 0%, rgba(253, 251, 251, 1) 100%);
+		border-radius: 20px;
+		box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.06);
+		padding: 30px;
+		margin-bottom: 20px;
+	}
+
+	.transaction-card {
+		background-color: #ffffff;
+		border-radius: 16px;
+		box-shadow: 0px 2px 6px rgba(0, 0, 0, 0.04);
+		padding: 18px 20px;
+		margin-bottom: 15px;
+	}
+
+	.transaction-header {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		margin-bottom: 6px;
+	}
+
+	.transaction-title {
+		font-weight: 700;
+		font-size: 15.8px;
+		color: #000000;
+	}
+
+	.transaction-amount.income {
+		color: var(--income-color);
+		font-weight: 700;
+		font-size: 14.6px;
+	}
+
+	.transaction-amount.expense {
+		color: var(--expense-color);
+		font-weight: 700;
+		font-size: 14.6px;
+	}
+
+	.transaction-date {
+		font-size: 13.1px;
+		color: var(--light-text);
+		margin-bottom: 6px;
+	}
+
+	.transaction-details {
+		font-size: 12.8px;
+		color: var(--text-color);
+		line-height: 21px;
+	}
+
+	.account-actions {
+		display: flex;
+		flex-direction: column;
+		gap: 15px;
+		margin-top: 20px;
+	}
+	<!-- Добавьте эти стили в секцию <style > -->
+	.filters {
+		display: flex;
+		gap: 15px;
+		margin-bottom: 25px;
+		align-items: center;
+	}
+
+	.filter-select {
+		padding: 10px 15px;
+		border-radius: 8px;
+		border: 1px solid var(--border-color);
+		background-color: white;
+		font-family: 'Inter', sans-serif;
+		font-size: 14px;
+		color: var(--text-color);
+		cursor: pointer;
+		outline: none;
+		transition: all 0.2s;
+	}
+
+		.filter-select:hover {
+			border-color: var(--primary-color);
+		}
+
+	.filter-button {
+		padding: 10px 20px;
+		background-color: var(--primary-color);
+		color: white;
+		border: none;
+		border-radius: 8px;
+		font-family: 'Inter', sans-serif;
+		font-size: 14px;
+		cursor: pointer;
+		transition: all 0.2s;
+	}
+
+		.filter-button:hover {
+			background-color: #1a6ec0;
+		}
+
+	.loading {
+		text-align: center;
+		padding: 20px;
+		color: var(--light-text);
+	}
+
+	.empty-state {
+		text-align: center;
+		padding: 20px;
+		color: var(--light-text);
+	}
+</style>
+
+<div class="screen">
+	<!-- Шапка -->
+	<div class="header">
+		<div class="logo" @onclick="NavigateToMain">MoneyFlow</div>
+		<div class="user-panel">
+			<div class="balance">
+				<span class="balance-label">Баланс</span>
+				<span class="balance-amount">@(currentBalance?.ToString("N0") ?? "0") Р</span>
+			</div>
+			<div class="avatar" @onclick="NavigateToAccount">
+				<img src="img/avatar.svg" alt="Аватар" />
+			</div>
+		</div>
+	</div>
+
+	<!-- Боковая панель -->
+	<div class="sidebar">
+		<div class="sidebar-item active" @onclick="NavigateToHistory">
+			<img src="img/history-icon.svg" alt="История" />
+			<span>История</span>
+		</div>
+		<div class="sidebar-item" @onclick="NavigateToTransfers">
+			<img src="img/transfers-icon.svg" alt="Переводы" />
+			<span>Переводы</span>
+		</div>
+		<div class="sidebar-item" @onclick="NavigateToInvestments">
+			<img src="img/investments-icon.svg" alt="Инвестиции" />
+			<span>Инвестиции</span>
+		</div>
+
+		@if (isAdmin)
+		{
+			<div class="sidebar-item" @onclick="NavigateToAdmin">
+				<img src="img/admin-icon.svg" alt="Админ-панель" />
+				<span>Админ-панель</span>
+			</div>
+		}
+	</div>
+
+	<!-- Основное содержимое -->
+	<div class="main-content">
+		<h1 class="page-title">История операций</h1>
+
+		<!-- Фильтры -->
+		<div class="filters">
+			<select @bind="selectedPeriod" class="filter-select">
+				<option value="week">Неделя</option>
+				<option value="month">Месяц</option>
+				<option value="quarter">Квартал</option>
+				<option value="year">Год</option>
+				<option value="all">Все время</option>
+			</select>
+
+			<select @bind="selectedType" class="filter-select">
+				<option value="all">Все типы</option>
+				<option value="Пополнение">Пополнение</option>
+				<option value="Перевод">Перевод</option>
+				<option value="Инвестиции">Инвестиции</option>
+				<option value="Покупка">Покупка</option>
+				<option value="Начисление процентов">Начисление процентов</option>
+			</select>
+
+			<button @onclick="LoadTransactions" class="filter-button">Применить</button>
+		</div>
+
+		<div class="history-container">
+			@if (isLoading)
+			{
+				<div class="loading">Загрузка данных...</div>
+			}
+			else if (!transactions.Any())
+			{
+				<div class="empty-state">Нет операций для отображения</div>
+			}
+			else
+			{
+				@foreach (var transaction in transactions)
+				{
+					<div class="transaction-card">
+						<div class="transaction-header">
+							<div class="transaction-title">@transaction.TransactionType</div>
+							<div class="transaction-amount @(transaction.Amount >= 0 ? "income" : "expense")">
+								@GetTransactionDirectionSign(transaction)
+								@Math.Abs(transaction.Amount).ToString("N0") ₽
+							</div>
+						</div>
+						<div class="transaction-date">@transaction.TransactionDate.ToString("dd.MM.yyyy, HH:mm")</div>
+						<div class="transaction-details">
+							@if (!string.IsNullOrEmpty(transaction.Comment))
+							{
+								<p>@transaction.Comment</p>
+							}
+							@if (transaction.RelatedUserId.HasValue || transaction.UserId != int.Parse(userId))
+							{
+								<p>
+									@GetTransactionCounterpartyLabel(transaction):
+									@userNamesCache.GetValueOrDefault(
+																		GetTransactionCounterpartyId(transaction),
+																		"Неизвестный пользователь")
+								</p>
+							}
+							@if (!string.IsNullOrEmpty(transaction.Status?.StatusName))
+							{
+								<p>Статус: @transaction.Status.StatusName</p>
+							}
+						</div>
+					</div>
+				}
+			}
+		</div>
+	</div>
+</div>
+
+@code {
+	private decimal? currentBalance;
+	private string? userId;
+	private bool isAdmin = false;
+	private ClaimsPrincipal? user;
+	private bool isLoading = false;
+	private string selectedPeriod = "month";
+	private string selectedType = "all";
+	private List<TransactionDto> transactions = new();
+	private Dictionary<int, string> userNamesCache = new();
+
+	private void NavigateToMain() => Navigation.NavigateTo("/main");
+	private void NavigateToAccount() => Navigation.NavigateTo("/account");
+	private void NavigateToHistory() => Navigation.NavigateTo("/history");
+	private void NavigateToTransfers() => Navigation.NavigateTo("/transfers");
+	private void NavigateToInvestments() => Navigation.NavigateTo("/investments");
+	private void NavigateToAdmin() => Navigation.NavigateTo("/admin");
+	private void NavigateToAbout() => Navigation.NavigateTo("/about");
+	private async Task RedirectToLogin() => Navigation.NavigateTo("/login");
+	private async Task Logout() => Navigation.NavigateTo("/logout");
+
+	protected override async Task OnInitializedAsync()
+	{
+		var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+		user = authState.User;
+
+		if (user.Identity?.IsAuthenticated == true)
+		{
+			userId = user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+			var roleClaim = user.FindFirst(ClaimTypes.Role)?.Value;
+			isAdmin = roleClaim == "1";
+
+			await LoadUserBalance();
+			await LoadTransactions();
+			await ProcessAuthState(authState);
+		}
+	}
+
+	private async Task ProcessAuthState(AuthenticationState authState)
+	{
+		user = authState.User;
+
+		if (user.Identity is { IsAuthenticated: true })
+		{
+			userId = user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+			var roleClaim = user.FindFirst(ClaimTypes.Role)?.Value;
+			isAdmin = roleClaim == "1";
+
+			await JSRuntime.InvokeVoidAsync("console.log",
+			$"User ID: {userId}, Role: {roleClaim}, IsAdmin: {isAdmin}");
+
+			if (!string.IsNullOrEmpty(userId))
+				await LoadUserBalance();
+		}
+		else
+		{
+			isAdmin = false;
+			await JSRuntime.InvokeVoidAsync("console.log", "Пользователь не авторизирован");
+		}
+
+		StateHasChanged();
+	}
+
+	private async Task LoadUserBalance()
+	{
+		try
+		{
+			var response = await Http.GetAsync($"api/Budget/users/{userId}");
+			if (response.IsSuccessStatusCode)
+			{
+				var content = await response.Content.ReadAsStringAsync();
+				var options = new JsonSerializerOptions
+					{
+						PropertyNameCaseInsensitive = true,
+						NumberHandling = JsonNumberHandling.AllowReadingFromString
+					};
+				var budget = JsonSerializer.Deserialize<Budget>(content, options);
+				currentBalance = budget?.Amount;
+			}
+		}
+		catch (Exception ex)
+		{
+			await JSRuntime.InvokeVoidAsync("console.error", ex.Message);
+		}
+	}
+
+	private async Task LoadTransactions()
+	{
+		isLoading = true;
+		StateHasChanged();
+
+		try
+		{
+			var url = $"api/UserAccount/user/{userId}?period={selectedPeriod}&type={selectedType}";
+			await JSRuntime.InvokeVoidAsync("console.log", $"Запрос транзакций: {url}");
+
+			var response = await Http.GetAsync(url);
+
+			if (response.IsSuccessStatusCode)
+			{
+				var content = await response.Content.ReadAsStringAsync();
+				await JSRuntime.InvokeVoidAsync("console.log", $"Получены транзакции: {content}");
+
+				var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+				transactions = JsonSerializer.Deserialize<List<TransactionDto>>(content, options)
+					?? new List<TransactionDto>();
+
+				await JSRuntime.InvokeVoidAsync("console.log",
+					$"Загружено {transactions.Count} транзакций. Текущий пользователь: {userId}");
+
+				// Обработка направлений транзакций
+				foreach (var t in transactions)
+				{
+					t.Amount = t.UserId == int.Parse(userId) ? -Math.Abs(t.Amount) : Math.Abs(t.Amount);
+				}
+
+				await PreloadUserNames();
+
+				// Проверяем кэш после загрузки
+				await JSRuntime.InvokeVoidAsync("console.log",
+					$"Кэш имен: {JsonSerializer.Serialize(userNamesCache)}");
+			}
+		}
+		catch (Exception ex)
+		{
+			await JSRuntime.InvokeVoidAsync("console.error", $"Ошибка: {ex.Message}");
+		}
+		finally
+		{
+			isLoading = false;
+			StateHasChanged();
+		}
+	}
+
+
+	private async Task PreloadUserNames()
+	{
+		try
+		{
+			// Собираем все ID пользователей, которые участвуют в транзакциях
+			var userIds = transactions
+				.SelectMany(t => new[] { t.UserId, t.RelatedUserId ?? 0 })
+				.Where(id => id > 0)
+				.Distinct()
+				.ToList();
+
+			// Находим ID, которых ещё нет в кэше
+			var missingIds = userIds
+				.Where(id => !userNamesCache.ContainsKey(id))
+				.ToList();
+
+			if (missingIds.Any())
+			{
+				// Загружаем имена для отсутствующих пользователей
+				var response = await Http.PostAsJsonAsync("api/UserAccount/batch-users", missingIds);
+
+				if (response.IsSuccessStatusCode)
+				{
+					var users = await response.Content.ReadFromJsonAsync<List<User>>();
+
+					foreach (var user in users)
+					{
+						if (!userNamesCache.ContainsKey(user.UserId))
+						{
+							userNamesCache[user.UserId] = user.Name;
+						}
+					}
+				}
+				else
+				{
+					await JSRuntime.InvokeVoidAsync("console.error",
+						$"Ошибка при загрузке пользователей: {response.StatusCode}");
+				}
+			}
+		}
+		catch (Exception ex)
+		{
+			await JSRuntime.InvokeVoidAsync("console.error",
+				$"Ошибка в PreloadUserNames: {ex.Message}");
+		}
+	}
+
+	private async Task<string> GetUserName(int? userId)
+	{
+		if (userId == null || userId <= 0)
+		{
+			return string.Empty;
+		}
+
+		if (userNamesCache.TryGetValue(userId.Value, out var name))
+		{
+			return name;
+		}
+
+		try
+		{
+			var response = await Http.GetAsync($"api/UserAccount/{userId}/name");
+			if (response.IsSuccessStatusCode)
+			{
+				name = await response.Content.ReadAsStringAsync();
+				userNamesCache[userId.Value] = name;
+				return name;
+			}
+		}
+		catch (Exception ex)
+		{
+			await JSRuntime.InvokeVoidAsync("console.error", ex.Message);
+		}
+
+		return $"Пользователь #{userId}";
+	}
+	private bool IsOutgoingTransaction(TransactionDto transaction)
+	{
+		return transaction.UserId == int.Parse(userId);
+	}
+
+	private string GetTransactionDirectionSign(TransactionDto transaction)
+	{
+		return IsOutgoingTransaction(transaction) ? "−" : "+";
+	}
+
+	private string GetTransactionCounterpartyLabel(TransactionDto transaction)
+	{
+		return IsOutgoingTransaction(transaction) ? "Получатель" : "Отправитель";
+	}
+
+	private int GetTransactionCounterpartyId(TransactionDto transaction)
+	{
+		return IsOutgoingTransaction(transaction)
+			? transaction.RelatedUserId ?? 0
+			: transaction.UserId;
+	}
+	public class TransactionDto
+	{
+		public int TransactionId { get; set; }
+		public int UserId { get; set; }
+		public int? RelatedUserId { get; set; }
+		public string TransactionType { get; set; }
+		public decimal Amount { get; set; }
+		public DateTime TransactionDate { get; set; }
+		public string Comment { get; set; }
+		public TransactionStatusDto Status { get; set; }
+
+	}
+
+	public class TransactionStatusDto
+	{
+		public int StatusId { get; set; }
+		public string StatusName { get; set; }
+	}
+
+	public class User
+	{
+		public int UserId { get; set; }
+		public string Name { get; set; }
+		public string Email { get; set; }
+	}
+
+	public class Budget
+	{
+		public decimal Amount { get; set; }
+	}
+	public class Transaction
+	{
+		public TransactionType Type { get; set; }
+		public decimal Amount { get; set; }
+		public DateTime Date { get; set; }
+		public List<string> Details { get; set; } = new();
+
+		public bool IsIncome => Type == TransactionType.Replenishment || Type == TransactionType.Interest;
+
+		public string TypeDisplay => Type switch
+		{
+			TransactionType.Replenishment => "Пополнение",
+			TransactionType.Transfer => "Перевод",
+			TransactionType.Investment => "Инвестиции",
+			TransactionType.Purchase => "Покупка",
+			TransactionType.Interest => "Начисление процентов",
+			_ => "Операция"
+		};
+
+		public string DateDisplay => Date.ToString("dd.MM.yyyy, HH:mm");
+	}
+
+	public enum TransactionType
+	{
+		Replenishment,
+		Transfer,
+		Investment,
+		Purchase,
+		Interest
+	}
+}
+

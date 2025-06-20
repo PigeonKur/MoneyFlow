@@ -242,7 +242,7 @@
 
     <!-- Боковая панель с увеличенными иконками -->
     <div class="sidebar">
-        <div class="sidebar-item active" @onclick="NavigateToHistory">
+        <div class="sidebar-item" @onclick="NavigateToHistory">
             <img src="img/history-icon.svg" alt="История" />
             <span>История</span>
         </div>
@@ -313,9 +313,10 @@
                     <h2>Динамика остатков</h2>
                     <div class="period-selector">
                         <select @bind="selectedTrendPeriod">
-                            <option value="month">30 дней</option>
-                            <option value="quarter">3 месяца</option>
-                            <option value="year">1 год</option>
+                            <option value="day">День</option>
+                            <option value="week">Неделя</option>
+                            <option value="month">Месяц</option>
+                            <option value="year">Год</option>
                         </select>
                     </div>
                 </div>

@@ -9,6 +9,7 @@
 
 <link href="css/account.css" rel="stylesheet" />
 
+@* СДЕЛАТЬ ЧТОБЫ НЕЛЬЗЯ САМОМУ СЕБЕ И ЧТОБЫ ПРИ НАЖАТИИ НА КРУЖОК ПЕРЕХОДИЛО НА ФОРМУ ПЕРЕВОДА *@
 <style>
     /* Основные стили (как в MainScreen) */
     :root {
@@ -109,6 +110,12 @@
             font-weight: 700;
         }
 
+    .page-title {
+        font-size: 22px;
+        margin: 0 0 15px 0; /* Уменьшил отступы */
+        color: #000;
+        font-weight: 700;
+    }
     /* Стили для страницы переводов */
     .transfer-container {
         max-width: 460px;
@@ -397,7 +404,7 @@
 
     <!-- Основной контент -->
     <div class="admin-content">
-        <h1>Переводы</h1>
+        <h1 class="page-title">Переводы</h1>
 
         <div class="transfer-container">
 
