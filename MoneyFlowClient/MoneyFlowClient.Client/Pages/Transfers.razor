@@ -9,7 +9,6 @@
 
 <link href="css/account.css" rel="stylesheet" />
 
-@* СДЕЛАТЬ ЧТОБЫ НЕЛЬЗЯ САМОМУ СЕБЕ И ЧТОБЫ ПРИ НАЖАТИИ НА КРУЖОК ПЕРЕХОДИЛО НА ФОРМУ ПЕРЕВОДА *@
 <style>
     /* Основные стили (как в MainScreen) */
     :root {
@@ -361,6 +360,41 @@
         min-height: 80px;
         font-family: inherit;
     }
+
+    .recent-user {
+        cursor: pointer;
+        transition: transform 0.2s;
+    }
+
+        .recent-user:hover {
+            transform: scale(1.05);
+        }
+
+    .avatar-close {
+        position: absolute;
+        top: -5px;
+        right: -5px;
+        width: 20px;
+        height: 20px;
+        background: #ff4444;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 12px;
+        z-index: 2;
+        opacity: 0;
+        transition: opacity 0.2s;
+    }
+
+    .recent-user:hover .avatar-close {
+        opacity: 1;
+    }
+
+    .avatar-close:hover {
+        background: #cc0000;
+    }
 </style>
 
 <div class="screen">
@@ -453,10 +487,10 @@
                 <div class="recent-users">
                     @foreach (var user in recentUsers)
                     {
-                        <div class="recent-user">
+                        <div class="recent-user" @onclick="() => StartQuickTransfer(user)">
                             <div class="user-avatar">
                                 @GetInitials(user.Name)
-                                <div class="avatar-close" @onclick="() => RemoveUser(user)">×</div>
+                                <div class="avatar-close" @onclick:stopPropagation="true" @onclick="() => RemoveUser(user)">×</div>
                             </div>
                             <div class="user-name">@GetShortName(user.Name)</div>
                         </div>
@@ -569,10 +603,8 @@
             if (response.IsSuccessStatusCode)
             {
                 recentUsers = await response.Content.ReadFromJsonAsync<List<User>>() ?? new List<User>();
-            }
-            else
-            {
-                recentUsers = new List<User>();
+                // Дополнительная фильтрация на клиенте (на всякий случай)
+                recentUsers = recentUsers.Where(u => u.UserId != int.Parse(userId)).ToList();
             }
         }
         catch
@@ -610,10 +642,25 @@
 
         try
         {
-            // Сначала пробуем найти по ID (если ввод - число)
-            if (int.TryParse(transferTarget, out int userId))
+            // Проверка на самого себя по email
+            var currentUserEmail = user.FindFirst(ClaimTypes.Email)?.Value;
+            if (transferTarget.Equals(currentUserEmail, StringComparison.OrdinalIgnoreCase))
             {
-                var response = await Http.GetAsync($"api/UserAccount/{userId}");
+                await JSRuntime.InvokeVoidAsync("alert", "Нельзя перевести самому себе");
+                return;
+            }
+
+            // Сначала пробуем найти по ID (если ввод - число)
+            if (int.TryParse(transferTarget, out int targetUserId))
+            {
+                // Проверка на самого себя по ID
+                if (targetUserId == int.Parse(userId))
+                {
+                    await JSRuntime.InvokeVoidAsync("alert", "Нельзя перевести самому себе");
+                    return;
+                }
+
+                var response = await Http.GetAsync($"api/UserAccount/{targetUserId}");
                 if (response.IsSuccessStatusCode)
                 {
                     targetUser = await response.Content.ReadFromJsonAsync<User>();
@@ -624,7 +671,7 @@
                 }
             }
 
-            // Если не число или не нашли по ID - ищем по email
+            // Поиск по email
             var emailResponse = await Http.GetAsync($"api/UserAccount/by-email/{transferTarget}");
             if (!emailResponse.IsSuccessStatusCode)
             {
@@ -747,7 +794,21 @@
 
         return name.Length > 10 ? $"{name.Substring(0, 8)}..." : name;
     }
-    
+    private void StartQuickTransfer(User user)
+    {
+        // Дополнительная проверка (хотя сервер уже не должен возвращать текущего пользователя)
+        if (user.UserId == int.Parse(userId))
+        {
+            JSRuntime.InvokeVoidAsync("alert", "Нельзя выбрать себя");
+            return;
+        }
+
+        targetUser = user;
+        transferTarget = user.Email;
+        recipientEmail = user.Email;
+        showTransferForm = true;
+        StateHasChanged();
+    }
     // Модели для клиента
     public class TransferResult
     {
