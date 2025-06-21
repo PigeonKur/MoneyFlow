@@ -390,13 +390,13 @@
 	private string? userId;
 	private bool isAdmin = false;
 	private ClaimsPrincipal? user;
-	private bool isLoading = false;
-	private string selectedPeriod = "month";
-	private string selectedType = "all";
-	private List<TransactionDto> transactions = new();
-	private Dictionary<int, string> userNamesCache = new();
+	public bool isLoading = false;
+	public string selectedPeriod = "month";
+	public string selectedType = "all";
+	public List<TransactionDto> transactions = new();
+	public Dictionary<int, string> userNamesCache = new();
 
-	private void NavigateToMain() => Navigation.NavigateTo("/main");
+	public void NavigateToMain() => Navigation.NavigateTo("/main");
 	private void NavigateToAccount() => Navigation.NavigateTo("/account");
 	private void NavigateToHistory() => Navigation.NavigateTo("/history");
 	private void NavigateToTransfers() => Navigation.NavigateTo("/transfers");
@@ -471,7 +471,7 @@
 		}
 	}
 
-	private async Task LoadTransactions()
+	public async Task LoadTransactions()
 	{
 		isLoading = true;
 		StateHasChanged();
@@ -520,7 +520,7 @@
 	}
 
 
-	private async Task PreloadUserNames()
+	public async Task PreloadUserNames()
 	{
 		try
 		{
@@ -601,12 +601,12 @@
 		return transaction.UserId == int.Parse(userId);
 	}
 
-	private string GetTransactionDirectionSign(TransactionDto transaction)
+	public string GetTransactionDirectionSign(TransactionDto transaction)
 	{
 		return IsOutgoingTransaction(transaction) ? "−" : "+";
 	}
 
-	private string GetTransactionCounterpartyLabel(TransactionDto transaction)
+	public string GetTransactionCounterpartyLabel(TransactionDto transaction)
 	{
 		return IsOutgoingTransaction(transaction) ? "Получатель" : "Отправитель";
 	}

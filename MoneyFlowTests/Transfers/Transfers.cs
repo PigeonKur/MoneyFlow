@@ -8,6 +8,8 @@ using Bunit.TestDoubles;
 using Microsoft.JSInterop;
 using Moq;
 
+namespace MoneyFlowTests.TransfersTest { 
+
 public class TransfersTests : TestContext
 {
     public TransfersTests()
@@ -81,4 +83,5 @@ public class TransfersTests : TestContext
     }
 
 
+}
 }
