@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using Moq;
 using WebApiDemo.Controllers;
 using WebApiDemo.Data;
@@ -11,7 +12,7 @@ namespace MoneyFlowTests.Controllers
 {
     public class UserAccountControllerTests
     {
-        private (AppDbContext, Mock<IPasswordHasher<User>>) GetDependencies()
+        private (AppDbContext, Mock<IPasswordHasher<User>>, Mock<ILogger<UserAccountController>>) GetDependencies()
         {
             var options = new DbContextOptionsBuilder<AppDbContext>()
                 .UseInMemoryDatabase(databaseName: "TestDb_" + Guid.NewGuid())
@@ -19,6 +20,7 @@ namespace MoneyFlowTests.Controllers
 
             var context = new AppDbContext(options);
             var hasherMock = new Mock<IPasswordHasher<User>>();
+            var loggerMock = new Mock<ILogger<UserAccountController>>();
 
             hasherMock.Setup(h => h.HashPassword(It.IsAny<User>(), It.IsAny<string>()))
                 .Returns("hashed_password");
@@ -38,7 +40,7 @@ namespace MoneyFlowTests.Controllers
             });
             context.SaveChanges();
 
-            return (context, hasherMock);
+            return (context, hasherMock, loggerMock);
         }
 
         [Fact]
@@ -50,7 +52,7 @@ namespace MoneyFlowTests.Controllers
                 .Options;
 
             await using var context = new AppDbContext(options);
-
+            var loggerMock = new Mock<ILogger<UserAccountController>>();
             var hasher = new PasswordHasher<User>();
             var user = new User
             {
@@ -62,25 +64,28 @@ namespace MoneyFlowTests.Controllers
             context.Users.Add(user);
             await context.SaveChangesAsync();
 
-            var controller = new UserAccountController(context);
+            var controller = new UserAccountController(context, loggerMock.Object);
 
+            // Act
             var result = await controller.Login(new UserLoginModel
             {
                 Email = "test@mail.com",
                 Password = "123456"
             });
 
+            // Assert
             Assert.NotNull(result);
             Assert.IsAssignableFrom<IActionResult>(result);
         }
 
-
         [Fact]
         public async Task Register_ExistingEmail_ReturnsConflict()
         {
-            var (context, hasherMock) = GetDependencies();
-            var controller = new UserAccountController(context);
+            // Arrange
+            var (context, hasherMock, loggerMock) = GetDependencies();
+            var controller = new UserAccountController(context, loggerMock.Object);
 
+            // Act
             var result = await controller.Create(new UserRegisterModel
             {
                 Email = "test@mail.com",
@@ -88,9 +93,9 @@ namespace MoneyFlowTests.Controllers
                 Name = "Test User"
             });
 
+            // Assert
             var conflict = Assert.IsType<ConflictObjectResult>(result);
             Assert.Equal("Пользователь с таким email уже существует", conflict.Value);
         }
-
     }
 }

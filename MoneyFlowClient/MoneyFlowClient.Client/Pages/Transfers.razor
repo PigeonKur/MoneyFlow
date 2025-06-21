@@ -546,15 +546,15 @@
     private string userId;
     private bool isAdmin = false;
     private string searchQuery = string.Empty;
-    private string transferTarget = string.Empty;
+    public string transferTarget = string.Empty;
     private List<User> recentUsers = new List<User>();
     private List<User> searchResults = new List<User>();
 
     private bool showTransferForm = false;
     private string recipientEmail = string.Empty;
-    private decimal transferAmount = 0;
+    public decimal transferAmount = 0;
     private string comment = string.Empty;
-    private User targetUser;
+    public User targetUser;
 
     protected override async Task OnInitializedAsync()
     {
@@ -632,7 +632,7 @@
         }
     }
 
-    private async Task HandleTransfer()
+    public async Task HandleTransfer()
     {
         if (string.IsNullOrWhiteSpace(transferTarget))
         {
@@ -691,7 +691,7 @@
         }
     }
 
-    private async Task ExecuteTransfer()
+    public async Task ExecuteTransfer()
     {
         try
         {
@@ -771,7 +771,7 @@
         }
     }
 
-    private string GetInitials(string name)
+    public string GetInitials(string name)
     {
         if (string.IsNullOrWhiteSpace(name))
             return "??";
@@ -783,7 +783,7 @@
         return name.Length >= 2 ? name.Substring(0, 2).ToUpper() : name.ToUpper();
     }
 
-    private string GetShortName(string name)
+    public string GetShortName(string name)
     {
         if (string.IsNullOrWhiteSpace(name))
             return "??";
