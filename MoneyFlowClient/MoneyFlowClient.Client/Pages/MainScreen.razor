@@ -2,8 +2,8 @@
 @inject NavigationManager Navigation
 @using Microsoft.AspNetCore.Components.Authorization
 @using Microsoft.Extensions.Logging
-@using MoneyFlowClient.Client.Models 
-@using System.Net.Http 
+@using MoneyFlowClient.Client.Models
+@using System.Net.Http
 @using System.Security.Claims
 @using System.Net
 @using System.Text.Json
@@ -13,456 +13,511 @@
 @inject IJSRuntime JSRuntime
 
 <style>
-    /* Основные стили */
-    :root {
-    --primary-color: #2e86de;
-    --sidebar-width: 110px; /* Уменьшил ширину сайдбара */
-    --header-height: 70px;
-    --card-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
-    --border-color: #eae6e6;
-    }
+	/* Основные стили */
+	:root {
+		--primary-color: #2e86de;
+		--sidebar-width: 110px; /* Уменьшил ширину сайдбара */
+		--header-height: 70px;
+		--card-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+		--border-color: #eae6e6;
+	}
 
-    body {
-    margin: 0;
-    font-family: 'Inter', sans-serif;
-    background-color: #f8f9fd;
-    color: #000000;
-    }
+	body {
+		margin: 0;
+		font-family: 'Inter', sans-serif;
+		background-color: #f8f9fd;
+		color: #000000;
+	}
 
-    /* Общая структура */
-    .screen {
-    display: grid;
-    grid-template-columns: var(--sidebar-width) 1fr;
-    grid-template-rows: var(--header-height) 1fr;
-    min-height: 100vh;
-    }
+	/* Общая структура */
+	.screen {
+		display: grid;
+		grid-template-columns: var(--sidebar-width) 1fr;
+		grid-template-rows: var(--header-height) 1fr;
+		min-height: 100vh;
+	}
 
-    /* Шапка */
-    .header {
-    grid-column: 2;
-    grid-row: 1;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 0 25px; /* Уменьшил отступы */
-    background: #ffffff;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-    z-index: 100;
-    height: var(--header-height);
-    }
+	/* Шапка */
+	.header {
+		grid-column: 2;
+		grid-row: 1;
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		padding: 0 25px; /* Уменьшил отступы */
+		background: #ffffff;
+		box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+		z-index: 100;
+		height: var(--header-height);
+	}
 
-    .logo {
-    font-size: 24px;
-    font-weight: 700;
-    color: var(--primary-color);
-    }
+	.logo {
+		font-size: 24px;
+		font-weight: 700;
+		color: var(--primary-color);
+	}
 
-    /* Боковая панель с увеличенными иконками */
-    .sidebar {
-    grid-column: 1;
-    grid-row: 1 / span 2;
-    background: #ffffff;
-    box-shadow: 1px 0 3px rgba(0, 0, 0, 0.1);
-    padding-top: 15px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    z-index: 90;
-    }
+	/* Боковая панель с увеличенными иконками */
+	.sidebar {
+		grid-column: 1;
+		grid-row: 1 / span 2;
+		background: #ffffff;
+		box-shadow: 1px 0 3px rgba(0, 0, 0, 0.1);
+		padding-top: 15px;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		z-index: 90;
+	}
 
-    .sidebar-item {
-    width: 100%;
-    padding: 25px 0; /* Увеличил отступы */
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 10px;
-    cursor: pointer;
-    font-size: 12px;
-    color: #555;
-    transition: all 0.2s;
-    }
+	.sidebar-item {
+		width: 100%;
+		padding: 25px 0; /* Увеличил отступы */
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 10px;
+		cursor: pointer;
+		font-size: 12px;
+		color: #555;
+		transition: all 0.2s;
+	}
 
-    .sidebar-item:hover {
-    background: #f5f7ff;
-    }
+		.sidebar-item:hover {
+			background: #f5f7ff;
+		}
 
-    .sidebar-item.active {
-    color: var(--primary-color);
-    background: #f0f4ff;
-    }
+		.sidebar-item.active {
+			color: var(--primary-color);
+			background: #f0f4ff;
+		}
 
-    .sidebar-item img {
-    width: 60px; /* Увеличил иконки */
-    height: 60px;
-    }
+		.sidebar-item img {
+			width: 60px; /* Увеличил иконки */
+			height: 60px;
+		}
 
-    /* Основное содержимое - смещено влево-вверх */
-    .main-content {
-    grid-column: 2;
-    grid-row: 2;
-    padding: 15px 20px; /* Уменьшил отступы */
-    background-color: #f8f9fd;
-    margin-top: 0px; /* Сдвигаем вверх */
-    margin-left: 35px; /* Сдвигаем влево */
-    }
+	/* Основное содержимое - смещено влево-вверх */
+	.main-content {
+		grid-column: 2;
+		grid-row: 2;
+		padding: 15px 20px; /* Уменьшил отступы */
+		background-color: #f8f9fd;
+		margin-top: 0px; /* Сдвигаем вверх */
+		margin-left: 35px; /* Сдвигаем влево */
+	}
 
-    .page-title {
-    font-size: 22px;
-    margin: 0 0 15px 0; /* Уменьшил отступы */
-    color: #000;
-    font-weight: 700;
-    }
+	.page-title {
+		font-size: 22px;
+		margin: 0 0 15px 0; /* Уменьшил отступы */
+		color: #000;
+		font-weight: 700;
+	}
 
-    /* Карточки */
-    .dashboard-row {
-    display: flex;
-    gap: 15px; /* Уменьшил промежуток */
-    margin-bottom: 15px;
-    }
+	/* Карточки */
+	.dashboard-row {
+		display: flex;
+		gap: 15px; /* Уменьшил промежуток */
+		margin-bottom: 15px;
+	}
 
-    .card {
-    background: #ffffff;
-    border-radius: 10px;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
-    padding: 15px;
-    display: flex;
-    flex-direction: column;
-    }
+	.card {
+		background: #ffffff;
+		border-radius: 10px;
+		box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+		padding: 15px;
+		display: flex;
+		flex-direction: column;
+	}
 
-    .wide-card {
-    flex: 3;
-    min-height: 300px; /* Уменьшенная высота */
-    }
+	.wide-card {
+		flex: 3;
+		min-height: 300px; /* Уменьшенная высота */
+	}
 
-    .small-card {
-    flex: 1;
-    min-height: 300px; /* Уменьшенная высота */
-    }
+	.small-card {
+		flex: 1;
+		min-height: 300px; /* Уменьшенная высота */
+	}
 
-    .card-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 15px;
-    }
+	.card-header {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		margin-bottom: 15px;
+	}
 
-    .card-header h2 {
-    font-size: 16px;
-    margin: 0;
-    color: #000;
-    font-weight: 700;
-    }
+		.card-header h2 {
+			font-size: 16px;
+			margin: 0;
+			color: #000;
+			font-weight: 700;
+		}
 
 
-    /* Элементы управления */
-    .period-selector select {
-    padding: 6px 10px;
-    border: 1px solid #ddd;
-    border-radius: 6px;
-    background: white;
-    font-size: 12px;
-    cursor: pointer;
-    }
+	/* Элементы управления */
+	.period-selector select {
+		padding: 6px 10px;
+		border: 1px solid #ddd;
+		border-radius: 6px;
+		background: white;
+		font-size: 12px;
+		cursor: pointer;
+	}
 
-    /* Контейнер для графиков */
-    .chart-container {
-    flex-grow: 1;
-    position: relative;
-    min-height: 200px; /* Уменьшенная высота области графика */
-    }
-    /* Панель пользователя */
-    .user-panel {
-    display: flex;
-    align-items: center;
-    gap: 15px;
-    }
+	/* Контейнер для графиков */
+	.chart-container {
+		flex-grow: 1;
+		position: relative;
+		min-height: 200px; /* Уменьшенная высота области графика */
+	}
+	/* Панель пользователя */
+	.user-panel {
+		display: flex;
+		align-items: center;
+		gap: 15px;
+	}
 
-    .balance {
-    text-align: right;
-    }
+	.balance {
+		text-align: right;
+	}
 
-    .balance-label {
-    display: block;
-    font-size: 12px;
-    color: #666;
-    }
+	.balance-label {
+		display: block;
+		font-size: 12px;
+		color: #666;
+	}
 
-    .balance-amount {
-    font-size: 16px;
-    font-weight: 700;
-    }
+	.balance-amount {
+		font-size: 16px;
+		font-weight: 700;
+	}
 
-    .avatar {
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    overflow: hidden;
-    cursor: pointer;
-    background: #eee;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    }
+	.avatar {
+		width: 40px;
+		height: 40px;
+		border-radius: 50%;
+		overflow: hidden;
+		cursor: pointer;
+		background: #eee;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+	}
 
-    .avatar img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    }
+		.avatar img {
+			width: 100%;
+			height: 100%;
+			object-fit: cover;
+		}
 
-    /* Графики (заглушки) */
-    .chart-placeholder {
-    background: #f9f9f9;
-    border-radius: 8px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: #999;
-    font-size: 14px;
-    height: 100%;
-    }
+	/* Графики (заглушки) */
+	.chart-placeholder {
+		background: #f9f9f9;
+		border-radius: 8px;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		color: #999;
+		font-size: 14px;
+		height: 100%;
+	}
 </style>
 
 <div class="screen">
-    <!-- Шапка -->
-    <div class="header">
-        <div class="logo">MoneyFlow</div>
-        <div class="user-panel">
-            <div class="balance">
-                <span class="balance-label">Баланс</span>
-                <span class="balance-amount">@(currentBalance?.ToString("N0") ?? "0") Р</span>
-            </div>
-            <div class="avatar" @onclick="NavigateToAccount">
-                <img src="img/avatar.svg" alt="Аватар" />
-            </div>
-        </div>
-    </div>
+	<!-- Шапка -->
+	<div class="header">
+		<div class="logo">MoneyFlow</div>
+		<div class="user-panel">
+			<div class="balance">
+				<span class="balance-label">Баланс</span>
+				<span class="balance-amount">@(currentBalance?.ToString("N0") ?? "0") Р</span>
+			</div>
+			<div class="avatar" @onclick="NavigateToAccount">
+				<img src="@_avatarUrl" alt="Аватар"
+					 onerror="this.src='https://ymzpnhfzzfkopqvrudiz.supabase.co/storage/v1/object/sign/avatar/avatar.svg?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9jNTBhNTJhOS1kMzYyLTRjMWUtOGMyNi0wNDM3Yjg2ZTIwYzkiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJhdmF0YXIvYXZhdGFyLnN2ZyIsImlhdCI6MTc1MDY3ODQ4NywiZXhwIjoxNzgyMjE0NDg3fQ.2MejLtqa8h0_90wYdz_Z4g4WORZnx2itSRRnm4CzpR8'" />
+			</div>
+		</div>
+	</div>
 
 
-    <!-- Боковая панель с увеличенными иконками -->
-    <div class="sidebar">
-        <div class="sidebar-item" @onclick="NavigateToHistory">
-            <img src="img/history-icon.svg" alt="История" />
-            <span>История</span>
-        </div>
-        <div class="sidebar-item" @onclick="NavigateToTransfers">
-            <img src="img/transfers-icon.svg" alt="Переводы" />
-            <span>Переводы</span>
-        </div>
-        <div class="sidebar-item" @onclick="NavigateToInvestments">
-            <img src="img/investments-icon.svg" alt="Инвестиции" />
-            <span>Инвестиции</span>
-        </div>
+	<!-- Боковая панель с увеличенными иконками -->
+	<div class="sidebar">
+		<div class="sidebar-item" @onclick="NavigateToHistory">
+			<img src="img/history-icon.svg" alt="История" />
+			<span>История</span>
+		</div>
+		<div class="sidebar-item" @onclick="NavigateToTransfers">
+			<img src="img/transfers-icon.svg" alt="Переводы" />
+			<span>Переводы</span>
+		</div>
+		<div class="sidebar-item" @onclick="NavigateToInvestments">
+			<img src="img/investments-icon.svg" alt="Инвестиции" />
+			<span>Инвестиции</span>
+		</div>
 
-        @if (isAdmin)
-        {
-            <div class="sidebar-item" @onclick="NavigateToAdmin">
-                <img src="img/admin-icon.svg" alt="Админ-панель" />
-                <span>Админ-панель</span>
-            </div>
-        }
-    </div>
+		@if (isAdmin)
+		{
+			<div class="sidebar-item" @onclick="NavigateToAdmin">
+				<img src="img/admin-icon.svg" alt="Админ-панель" />
+				<span>Админ-панель</span>
+			</div>
+		}
+	</div>
 
-   
-    <!-- Основное содержимое -->
-    <div class="main-content">
-        <h1 class="page-title">Рабочий стол</h1>
 
-        <!-- Первая строка с карточками -->
-        <div class="dashboard-row">
-            <div class="card wide-card">
-                <div class="card-header">
-                    <h2>Доходы и расходы</h2>
-                    <div class="period-selector">
-                        <select @bind="selectedPeriod">
-                            <option value="day">День</option>
-                            <option value="week">Неделя</option>
-                            <option value="month">Месяц</option>
-                            <option value="year">Год</option>
-                        </select>
-                    </div>
-                </div>
-                <div class="chart-container">
-                    <div class="chart-placeholder">График доходов и расходов</div>
-                </div>
-            </div>
+	<!-- Основное содержимое -->
+	<div class="main-content">
+		<h1 class="page-title">Рабочий стол</h1>
 
-            <div class="card small-card">
-                <div class="card-header">
-                    <h2>Поступления за период</h2>
-                    <div class="period-selector">
-                        <select @bind="selectedMiniIncomePeriod">
-                            <option value="day">День</option>
-                            <option value="week">Неделя</option>
-                            <option value="month">Месяц</option>
-                            <option value="year">Год</option>
-                        </select>
-                    </div>
-                </div>
-                <div class="chart-container">
-                    <div class="chart-placeholder">График поступлений</div>
-                </div>
-            </div>
-        </div>
+		<!-- Первая строка с карточками -->
+		<div class="dashboard-row">
+			<div class="card wide-card">
+				<div class="card-header">
+					<h2>Доходы и расходы</h2>
+					<div class="period-selector">
+						<select @bind="selectedPeriod">
+							<option value="day">День</option>
+							<option value="week">Неделя</option>
+							<option value="month">Месяц</option>
+							<option value="year">Год</option>
+						</select>
+					</div>
+				</div>
+				<div class="chart-container">
+					<div class="chart-placeholder">График доходов и расходов</div>
+				</div>
+			</div>
 
-        <!-- Вторая строка с карточками -->
-        <div class="dashboard-row">
-            <div class="card wide-card">
-                <div class="card-header">
-                    <h2>Динамика остатков</h2>
-                    <div class="period-selector">
-                        <select @bind="selectedTrendPeriod">
-                            <option value="day">День</option>
-                            <option value="week">Неделя</option>
-                            <option value="month">Месяц</option>
-                            <option value="year">Год</option>
-                        </select>
-                    </div>
-                </div>
-                <div class="chart-container">
-                    <div class="chart-placeholder">График динамики остатков</div>
-                </div>
-            </div>
+			<div class="card small-card">
+				<div class="card-header">
+					<h2>Поступления за период</h2>
+					<div class="period-selector">
+						<select @bind="selectedMiniIncomePeriod">
+							<option value="day">День</option>
+							<option value="week">Неделя</option>
+							<option value="month">Месяц</option>
+							<option value="year">Год</option>
+						</select>
+					</div>
+				</div>
+				<div class="chart-container">
+					<div class="chart-placeholder">График поступлений</div>
+				</div>
+			</div>
+		</div>
 
-            <div class="card small-card">
-                <div class="card-header">
-                    <h2>Расходы за период</h2>
-                    <div class="period-selector">
-                        <select @bind="selectedMiniExpensePeriod">
-                            <option value="day">День</option>
-                            <option value="week">Неделя</option>
-                            <option value="month">Месяц</option>
-                            <option value="year">Год</option>
-                        </select>
-                    </div>
-                </div>
-                <div class="chart-container">
-                    <div class="chart-placeholder">График расходов</div>
-                </div>
-            </div>
-        </div>
-    </div>
+		<!-- Вторая строка с карточками -->
+		<div class="dashboard-row">
+			<div class="card wide-card">
+				<div class="card-header">
+					<h2>Динамика остатков</h2>
+					<div class="period-selector">
+						<select @bind="selectedTrendPeriod">
+							<option value="day">День</option>
+							<option value="week">Неделя</option>
+							<option value="month">Месяц</option>
+							<option value="year">Год</option>
+						</select>
+					</div>
+				</div>
+				<div class="chart-container">
+					<div class="chart-placeholder">График динамики остатков</div>
+				</div>
+			</div>
+
+			<div class="card small-card">
+				<div class="card-header">
+					<h2>Расходы за период</h2>
+					<div class="period-selector">
+						<select @bind="selectedMiniExpensePeriod">
+							<option value="day">День</option>
+							<option value="week">Неделя</option>
+							<option value="month">Месяц</option>
+							<option value="year">Год</option>
+						</select>
+					</div>
+				</div>
+				<div class="chart-container">
+					<div class="chart-placeholder">График расходов</div>
+
+				</div>
+			</div>
+		</div>
+	</div>
 </div>
 
 <AuthorizeView>
-    <Authorized>
-    </Authorized>
-    <NotAuthorized>
-        <div class="auth-message">
-            <p>Вы не авторизованы</p>
-            <button @onclick="RedirectToLogin">Войти</button>
-        </div>
-    </NotAuthorized>
+	<Authorized>
+	</Authorized>
+	<NotAuthorized>
+		<div class="auth-message">
+			<p>Вы не авторизованы</p>
+			<button @onclick="RedirectToLogin">Войти</button>
+		</div>
+	</NotAuthorized>
 </AuthorizeView>
 
 @code {
-    private decimal? currentBalance;
-    private string? userId;
-    private bool isAdmin = false;
-    private ClaimsPrincipal? user;
-    private string selectedPeriod = "month";
-    private string selectedTrendPeriod = "month";
-    private string selectedMiniIncomePeriod = "month";
-    private string selectedMiniExpensePeriod = "month";
+	private decimal? currentBalance;
+	private string? userId;
+	private bool isAdmin = false;
+	private ClaimsPrincipal? user;
+	private string selectedPeriod = "month";
+	private string selectedTrendPeriod = "month";
+	private string selectedMiniIncomePeriod = "month";
+	private string selectedMiniExpensePeriod = "month";
+	private string? _userName;
+	private string? _email;
+	private string _avatarUrl = "https://ymzpnhfzzfkopqvrudiz.supabase.co/storage/v1/object/sign/avatar/avatar.svg?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9jNTBhNTJhOS1kMzYyLTRjMWUtOGMyNi0wNDM3Yjg2ZTIwYzkiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJhdmF0YXIvYXZhdGFyLnN2ZyIsImlhdCI6MTc1MDY3NzcyNSwiZXhwIjoxNzgyMjEzNzI1fQ.nooWtvyI88n56xp0E0cANLdW2WznFL-9HpRnOuQVMUA"; // URL по умолчанию
+	private string? _userEmail;
 
-    private void NavigateToAccount() => Navigation.NavigateTo("/account");
-    private void NavigateToHistory() => Navigation.NavigateTo("/history");
-    private void NavigateToTransfers() => Navigation.NavigateTo("/transfers");
-    private void NavigateToInvestments() => Navigation.NavigateTo("/investments");
-    private void NavigateToAdmin() => Navigation.NavigateTo("/admin");
-    private async Task RedirectToLogin() => Navigation.NavigateTo("/login");
+	[Inject]
+	private Supabase.Client? Supabase { get; set; }
+
+	private void NavigateToAccount() => Navigation.NavigateTo("/account");
+	private void NavigateToHistory() => Navigation.NavigateTo("/history");
+	private void NavigateToTransfers() => Navigation.NavigateTo("/transfers");
+	private void NavigateToInvestments() => Navigation.NavigateTo("/investments");
+	private void NavigateToAdmin() => Navigation.NavigateTo("/admin");
+	private async Task RedirectToLogin() => Navigation.NavigateTo("/login");
 
 
-    protected override async Task OnInitializedAsync()
-    {
-        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
-        user = authState.User;
-        await ProcessAuthState(authState);
-    }
+	protected override async Task OnInitializedAsync()
+	{
+		var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+		user = authState.User;
+		await ProcessAuthState(authState);
+	}
 
-    private async Task ProcessAuthState(AuthenticationState authState)
-    {
-        user = authState.User;
+	private async Task ProcessAuthState(AuthenticationState authState)
+	{
+		user = authState.User;
 
-        if (user.Identity is { IsAuthenticated: true })
-        {
-            userId = user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+		if (user.Identity is { IsAuthenticated: true })
+		{
+			userId = user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+			_userEmail = user.FindFirst(ClaimTypes.Email)?.Value; // Получаем email пользователя
 
-            // Получаем роль из claims
-            var roleClaim = user.FindFirst(ClaimTypes.Role)?.Value;
-            isAdmin = roleClaim == "1"; 
+			// Получаем роль из claims
+			var roleClaim = user.FindFirst(ClaimTypes.Role)?.Value;
+			isAdmin = roleClaim == "1";
 
-            await JSRuntime.InvokeVoidAsync("console.log",
-                $"User ID: {userId}, Role: {roleClaim}, IsAdmin: {isAdmin}");
+			await JSRuntime.InvokeVoidAsync("console.log",
+				$"User ID: {userId}, Role: {roleClaim}, IsAdmin: {isAdmin}");
 
-            if (!string.IsNullOrEmpty(userId))
-                await LoadUserBalance();
-        }
-        else
-        {
-            isAdmin = false;
-            await JSRuntime.InvokeVoidAsync("console.log", "Пользователь не авторизирован");
-        }
+			if (!string.IsNullOrEmpty(userId))
+			{
+				await LoadUserBalance();
+				await LoadUserData();
+			}
+		}
+		else
+		{
+			isAdmin = false;
+			await JSRuntime.InvokeVoidAsync("console.log", "Пользователь не авторизирован");
+		}
 
-        StateHasChanged();
-    }
+		StateHasChanged();
+	}
+	private async Task LoadUserData()
+	{
+		try
+		{
+			var response = await Http.GetAsync($"api/UserAccount/{userId}/with-avatar");
+			if (response.IsSuccessStatusCode)
+			{
+				var userData = await response.Content.ReadFromJsonAsync<UserData>();
 
-    private async Task LoadUserBalance()
-    {
-        await JSRuntime.InvokeVoidAsync("console.log", "=== Начало загрузки баланса ===");
+				// Инициализируем значения по умолчанию для null
+				_userName = userData?.Name ?? string.Empty;
+				_email = userData?.Email ?? string.Empty;
 
-        try
-        {
-            var response = await Http.GetAsync($"api/Budget/users/{userId}");
-            var content = await response.Content.ReadAsStringAsync();
-            await JSRuntime.InvokeVoidAsync("console.log", $"Ответ сервера: {content}");
+				// Используем URL аватарки из базы данных или fallback
+				_avatarUrl = userData?.AvatarUrl ?? "https://placehold.co/40";
 
-            var options = new JsonSerializerOptions
-                {
-                    PropertyNameCaseInsensitive = true,
-                    NumberHandling = JsonNumberHandling.AllowReadingFromString
-                };
+				StateHasChanged();
+			}
+		}
+		catch (Exception ex)
+		{
+			Console.WriteLine($"Ошибка загрузки данных пользователя: {ex.Message}");
+			_avatarUrl = "https://placehold.co/40";
+			_userName = string.Empty;
+			_email = string.Empty;
+			StateHasChanged();
+		}
+	}
 
-            var budget = JsonSerializer.Deserialize<Budget>(content, options);
+	private async Task<bool> CheckIfAvatarExists(string fileName)
+	{
+		if (Supabase == null) return false;
 
-            await JSRuntime.InvokeVoidAsync("console.log",
-                $"Десериализовано: Amount={budget?.Amount}, Type={budget?.Amount.GetType()}");
+		try
+		{
+			var list = await Supabase.Storage
+				.From("avatar")
+				.List();
 
-            currentBalance = budget?.Amount ?? 0;
-        }
-        catch (Exception ex)
-        {
-            await JSRuntime.InvokeVoidAsync("console.error", $"Ошибка: {ex}");
-        }
-        finally
-        {
-            StateHasChanged();
-        }
-    }
+			return list.Any(f => f.Name == fileName);
+		}
+		catch
+		{
+			return false;
+		}
+	}
+	private async Task LoadUserBalance()
+	{
+		await JSRuntime.InvokeVoidAsync("console.log", "=== Начало загрузки баланса ===");
 
-    protected override async Task OnAfterRenderAsync(bool firstRender)
-    {
-        if (firstRender)
-        {
-            await InitializeCharts();
-        }
-    }
+		try
+		{
+			var response = await Http.GetAsync($"api/Budget/users/{userId}");
+			var content = await response.Content.ReadAsStringAsync();
+			await JSRuntime.InvokeVoidAsync("console.log", $"Ответ сервера: {content}");
 
-    private async Task InitializeCharts()
-    {
-        // инициализация графиков
-    }
+			var options = new JsonSerializerOptions
+				{
+					PropertyNameCaseInsensitive = true,
+					NumberHandling = JsonNumberHandling.AllowReadingFromString
+				};
+
+			var budget = JsonSerializer.Deserialize<Budget>(content, options);
+
+			await JSRuntime.InvokeVoidAsync("console.log",
+				$"Десериализовано: Amount={budget?.Amount}, Type={budget?.Amount.GetType()}");
+
+			currentBalance = budget?.Amount ?? 0;
+		}
+		catch (Exception ex)
+		{
+			await JSRuntime.InvokeVoidAsync("console.error", $"Ошибка: {ex}");
+		}
+		finally
+		{
+			StateHasChanged();
+		}
+	}
+
+	protected override async Task OnAfterRenderAsync(bool firstRender)
+	{
+		if (firstRender)
+		{
+			await InitializeCharts();
+		}
+	}
+
+	private async Task InitializeCharts()
+	{
+		// инициализация графиков
+	}
+	public class UserData
+	{
+		public string Name { get; set; }
+		public string Email { get; set; }
+		public string AvatarUrl { get; set; }
+	}
+
 }
 
-@* добавить в админку *@
-@*             protected override async Task OnInitializedAsync() *@
-@* { *@
-@*     var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync(); *@
-@*     var user = authState.User; *@
 
-@*     if (!user.Identity.IsAuthenticated) *@
-@*     { *@
-@*         Navigation.NavigateTo("/login"); *@
-@*     } *@
-@* } *@

@@ -370,6 +370,20 @@
             transform: scale(1.05);
         }
 
+    .recipient-info {
+        margin-top: 10px;
+    }
+
+    .recipient-name {
+        font-weight: 600;
+        font-size: 16px;
+        margin-bottom: 5px;
+    }
+
+    .recipient-email {
+        color: #666;
+        font-size: 14px;
+    }
     .avatar-close {
         position: absolute;
         top: -5px;
@@ -407,7 +421,8 @@
                 <span class="balance-amount">@(currentBalance?.ToString("N0") ?? "0") ₽</span>
             </div>
             <div class="avatar" @onclick="NavigateToAccount">
-                <img src="img/avatar.svg" alt="Аватар" />
+                <img src="@_avatarUrl" alt="Аватар"
+                     onerror="this.src='https://ymzpnhfzzfkopqvrudiz.supabase.co/storage/v1/object/sign/avatar/avatar.svg?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9jNTBhNTJhOS1kMzYyLTRjMWUtOGMyNi0wNDM3Yjg2ZTIwYzkiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJhdmF0YXIvYXZhdGFyLnN2ZyIsImlhdCI6MTc1MDY3ODQ4NywiZXhwIjoxNzgyMjE0NDg3fQ.2MejLtqa8h0_90wYdz_Z4g4WORZnx2itSRRnm4CzpR8'" />
             </div>
         </div>
     </div>
@@ -456,7 +471,10 @@
 
                     <div class="form-section">
                         <h3>Получатель</h3>
-                        <div class="recipient-info">@recipientEmail</div>
+                        <div class="recipient-info">
+                            <div class="recipient-name">@targetUser?.Name</div>
+                            <div class="recipient-email">@recipientEmail</div>
+                        </div>
                     </div>
 
                     <div class="form-section">
@@ -474,7 +492,7 @@
 
                     <div class="confirmation-section">
                         <h3>Подтверждение</h3>
-                        <div><strong>Получатель:</strong> @recipientEmail</div>
+                        <div><strong>Получатель:</strong> @targetUser?.Name (@recipientEmail)</div>
                         <div><strong>Сумма:</strong> @transferAmount ₽</div>
                         <div><strong>Комментарий:</strong> @(string.IsNullOrEmpty(comment) ? "Без комментария" : comment)</div>
                     </div>
@@ -549,12 +567,18 @@
     public string transferTarget = string.Empty;
     private List<User> recentUsers = new List<User>();
     private List<User> searchResults = new List<User>();
-
-    private bool showTransferForm = false;
+        private bool showTransferForm = false;
     private string recipientEmail = string.Empty;
     public decimal transferAmount = 0;
     private string comment = string.Empty;
     public User targetUser;
+    private string? _userName;
+    private string? _email;
+    private string _avatarUrl = "https://ymzpnhfzzfkopqvrudiz.supabase.co/storage/v1/object/sign/avatar/avatar.svg?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9jNTBhNTJhOS1kMzYyLTRjMWUtOGMyNi0wNDM3Yjg2ZTIwYzkiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJhdmF0YXIvYXZhdGFyLnN2ZyIsImlhdCI6MTc1MDY3NzcyNSwiZXhwIjoxNzgyMjEzNzI1fQ.nooWtvyI88n56xp0E0cANLdW2WznFL-9HpRnOuQVMUA"; // URL по умолчанию
+    private string? _userEmail;
+
+    [Inject]
+    private Supabase.Client? Supabase { get; set; }
 
     protected override async Task OnInitializedAsync()
     {
@@ -567,7 +591,6 @@
         await LoadRecentUsers(); // Загружаем последних пользователей
     }
 
-    //для отображение админ панели, если админ
     private async Task ProcessAuthState(AuthenticationState authState)
     {
         user = authState.User;
@@ -575,6 +598,7 @@
         if (user.Identity is { IsAuthenticated: true })
         {
             userId = user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            _userEmail = user.FindFirst(ClaimTypes.Email)?.Value; // Получаем email пользователя
 
             // Получаем роль из claims
             var roleClaim = user.FindFirst(ClaimTypes.Role)?.Value;
@@ -584,7 +608,10 @@
                 $"User ID: {userId}, Role: {roleClaim}, IsAdmin: {isAdmin}");
 
             if (!string.IsNullOrEmpty(userId))
+            {
                 await LoadUserBalance();
+                await LoadUserData();
+            }
         }
         else
         {
@@ -593,6 +620,52 @@
         }
 
         StateHasChanged();
+    }
+    private async Task LoadUserData()
+    {
+        try
+        {
+            var response = await Http.GetAsync($"api/UserAccount/{userId}/with-avatar");
+            if (response.IsSuccessStatusCode)
+            {
+                var userData = await response.Content.ReadFromJsonAsync<UserData>();
+
+                // Инициализируем значения по умолчанию для null
+                _userName = userData?.Name ?? string.Empty;
+                _email = userData?.Email ?? string.Empty;
+
+                // Используем URL аватарки из базы данных или fallback
+                _avatarUrl = userData?.AvatarUrl ?? "https://placehold.co/40";
+
+                StateHasChanged();
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Ошибка загрузки данных пользователя: {ex.Message}");
+            _avatarUrl = "https://placehold.co/40";
+            _userName = string.Empty;
+            _email = string.Empty;
+            StateHasChanged();
+        }
+    }
+
+    private async Task<bool> CheckIfAvatarExists(string fileName)
+    {
+        if (Supabase == null) return false;
+
+        try
+        {
+            var list = await Supabase.Storage
+                .From("avatar")
+                .List();
+
+            return list.Any(f => f.Name == fileName);
+        }
+        catch
+        {
+            return false;
+        }
     }
 
     private async Task LoadRecentUsers()
@@ -844,7 +917,12 @@
         public decimal Amount { get; set; }
         public string Comment { get; set; }
     }
-
+    public class UserData
+    {
+        public string Name { get; set; }
+        public string Email { get; set; }
+        public string AvatarUrl { get; set; }
+    }
     // Методы навигации
     private void NavigateToMain() => Navigation.NavigateTo("/main");
     private void NavigateToHistory() => Navigation.NavigateTo("/history");

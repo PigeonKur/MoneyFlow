@@ -25,7 +25,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\MoneyFlowClient\MoneyFlowClient.Client\MoneyFlowClient.Client.csproj" />
-    <ProjectReference Include="..\MoneyFlowClient\MoneyFlowClient\MoneyFlowClient.csproj" />
   </ItemGroup>
 
   <ItemGroup>
