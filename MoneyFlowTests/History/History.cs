@@ -9,6 +9,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Moq;
 using MoneyFlowClient.Client.Pages;
 using Microsoft.JSInterop;
+using Supabase;
 
 namespace MoneyFlowTests.HistoryTest
 {
@@ -18,24 +19,26 @@ namespace MoneyFlowTests.HistoryTest
         private readonly Mock<AuthenticationStateProvider> _authStateProviderMock;
         private readonly Mock<HttpClient> _httpClientMock;
         private readonly TestNavigationManager _navigationManager;
-
-        private readonly ClaimsPrincipal _user;
-        private readonly ClaimsIdentity _identity;
+        private readonly Mock<Client> _supabaseMock;
 
         public HistoryTests()
         {
+            // Инициализация мока Supabase.Client
+            _supabaseMock = new Mock<Client>("https://localhost", "anon-key", null);
+            Services.AddSingleton(_supabaseMock.Object);
+
             _jsRuntimeMock = new Mock<IJSRuntime>();
             _authStateProviderMock = new Mock<AuthenticationStateProvider>();
             _httpClientMock = new Mock<HttpClient>();
 
-            _identity = new ClaimsIdentity(new[]
+            var identity = new ClaimsIdentity(new[]
             {
-            new Claim(ClaimTypes.NameIdentifier, "123"),
-            new Claim(ClaimTypes.Role, "0")
-        }, "test");
-            _user = new ClaimsPrincipal(_identity);
+                new Claim(ClaimTypes.NameIdentifier, "123"),
+                new Claim(ClaimTypes.Role, "0")
+            }, "test");
+            var user = new ClaimsPrincipal(identity);
 
-            var authState = new AuthenticationState(_user);
+            var authState = new AuthenticationState(user);
             _authStateProviderMock.Setup(x => x.GetAuthenticationStateAsync())
                 .ReturnsAsync(authState);
 
@@ -60,8 +63,6 @@ namespace MoneyFlowTests.HistoryTest
             Assert.Contains("Все типы", component.Markup);
         }
 
-
-
         [Fact]
         public void GetTransactionDirectionSign_ReturnsCorrectSign()
         {
@@ -83,7 +84,6 @@ namespace MoneyFlowTests.HistoryTest
             // Act & Assert
             Assert.Equal("Получатель", component.Instance.GetTransactionCounterpartyLabel(transaction));
         }
-
 
         [Fact]
         public void PeriodFilter_WorksCorrectly()
