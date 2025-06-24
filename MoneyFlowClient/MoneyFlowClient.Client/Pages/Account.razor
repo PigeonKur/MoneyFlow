@@ -224,6 +224,154 @@
         margin-right: 10px;
         font-size: 20px;
     }
+
+    /* Стили для модального окна */
+    .modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.3);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+        backdrop-filter: blur(2px);
+    }
+
+    .modal-content {
+        background: white;
+        padding: 25px;
+        border-radius: 12px;
+        width: 400px;
+        max-width: 90%;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+    }
+
+    .modal-header {
+        font-size: 20px;
+        font-weight: 600;
+        margin-bottom: 20px;
+        color: var(--primary-color);
+    }
+
+    .modal-body {
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+    }
+
+    .form-group {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .form-label {
+        font-size: 14px;
+        color: #555;
+    }
+
+    .form-input {
+        padding: 10px 12px;
+        border: 1px solid var(--border-color);
+        border-radius: 6px;
+        font-size: 14px;
+        transition: all 0.2s;
+    }
+
+        .form-input:focus {
+            border-color: var(--primary-color);
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(46, 134, 222, 0.2);
+        }
+
+    .form-select {
+        padding: 10px 12px;
+        border: 1px solid var(--border-color);
+        border-radius: 6px;
+        font-size: 14px;
+        background-color: white;
+        cursor: pointer;
+    }
+
+        .form-select:focus {
+            border-color: var(--primary-color);
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(46, 134, 222, 0.2);
+        }
+
+    .modal-footer {
+        display: flex;
+        justify-content: flex-end;
+        gap: 12px;
+        margin-top: 20px;
+    }
+
+    .btn {
+        padding: 10px 18px;
+        border-radius: 6px;
+        font-size: 14px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s;
+        border: none;
+    }
+
+    .btn-secondary {
+        background: #f0f2f5;
+        color: #555;
+    }
+
+        .btn-secondary:hover {
+            background: #e5e7eb;
+        }
+
+    .btn-primary {
+        background: var(--primary-color);
+        color: white;
+    }
+
+        .btn-primary:hover {
+            background: #2674c8;
+        }
+
+    .add-card-btn {
+        background: var(--primary-color);
+        color: white;
+        border: none;
+        padding: 8px 16px;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 14px;
+        font-weight: 500;
+        float: right;
+        transition: all 0.2s;
+    }
+
+        .add-card-btn:hover {
+            background: #2674c8;
+        }
+
+    .btn-cancel {
+        background: #f0f0f0;
+        border: none;
+        padding: 8px 16px;
+        border-radius: 4px;
+        cursor: pointer;
+    }
+
+    .btn-confirm {
+        background: var(--primary-color);
+        color: white;
+        border: none;
+        padding: 8px 16px;
+        border-radius: 4px;
+        cursor: pointer;
+    }
+
+   
 </style>
 
 <div class="screen">
@@ -235,6 +383,7 @@
                 <span class="balance-label">Баланс</span>
                 <span class="balance-amount">@(currentBalance?.ToString("N0") ?? "0") ₽</span>
             </div>
+
             <div class="avatar" @onclick="NavigateToAccount">
                 <img src="@_avatarUrl" alt="Аватар"
                      onerror="this.src='https://ymzpnhfzzfkopqvrudiz.supabase.co/storage/v1/object/sign/avatar/avatar.svg?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9jNTBhNTJhOS1kMzYyLTRjMWUtOGMyNi0wNDM3Yjg2ZTIwYzkiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJhdmF0YXIvYXZhdGFyLnN2ZyIsImlhdCI6MTc1MDY3ODQ4NywiZXhwIjoxNzgyMjE0NDg3fQ.2MejLtqa8h0_90wYdz_Z4g4WORZnx2itSRRnm4CzpR8'" />
@@ -244,7 +393,7 @@
 
     <!-- Боковая панель (точно такая же как в MainScreen) -->
     <div class="sidebar">
-        <div class="sidebar-item active" @onclick="NavigateToHistory">
+        <div class="sidebar-item" @onclick="NavigateToHistory">
             <img src="img/history-icon.svg" alt="История" />
             <span>История</span>
         </div>
@@ -284,24 +433,62 @@
 
         <!-- Блок счетов -->
         <div class="account-card">
-            <div class="account-header">Ваши счета</div>
+            <div class="account-header">
+                Ваши счета
+                <button class="add-card-btn" @onclick="ShowAddCardModal">+ Добавить карту</button>
+            </div>
+
             <div class="accounts-grid">
-                <div class="account-item">
-                    <div class="account-icon">💳</div>
-                    <div class="account-details">
-                        <div class="account-amount">355,61 ₽</div>
-                        <div class="account-description">Счет •• 5522</div>
+                @if (isLoading)
+                {
+                    <div>Загрузка...</div>
+                }
+                else if (userCards.Count == 0)
+                {
+                    <div>У вас пока нет карт</div>
+                }
+                else
+                {
+                    @foreach (var card in userCards)
+                    {
+                        <div class="account-item">
+                            <div class="account-icon">💳</div>
+                            <div class="account-details">
+                                <div class="account-amount">@card.Amount.ToString("N2") ₽</div>
+                                <div class="account-description">@card.Description</div>
+                            </div>
+                        </div>
+                    }
+                }
+            </div>
+        </div>
+
+        <!-- Модальное окно добавления карты -->
+        @if (showAddCardModal)
+        {
+            <div class="modal-overlay" @onclick="HideAddCardModal">
+                <div class="modal-content" @onclick:stopPropagation>
+                    <div class="modal-header">Добавить новую карту</div>
+                    <div class="modal-body">
+                        <div class="form-group">
+                            <label class="form-label">Название карты</label>
+                            <input class="form-input" type="text" @bind="newCardDescription" placeholder="Например: Основная карта" />
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Начальный баланс</label>
+                            <input class="form-input" type="number" @bind="newCardAmount" placeholder="0.00" />
+                        </div>
+
                     </div>
-                </div>
-                <div class="account-item">
-                    <div class="account-icon">💰</div>
-                    <div class="account-details">
-                        <div class="account-amount">25 000 ₽</div>
-                        <div class="account-description">Инвестиция</div>
+
+                    <div class="modal-footer">
+                        <button class="btn btn-secondary" @onclick="HideAddCardModal">Отмена</button>
+                        <button class="btn btn-primary" @onclick="AddNewCard">Добавить карту</button>
                     </div>
                 </div>
             </div>
-        </div>
+        }
 
         <!-- Блок выгоды -->
         <div class="account-card">
@@ -340,6 +527,11 @@
     private string? _userEmail;
     private string? _userName;
     private string? _email;
+    private List<Budget> userCards = new();
+    private bool isLoading = true;
+    private bool showAddCardModal = false;
+    private string newCardDescription = "";
+    private decimal newCardAmount = 0;
 
     public class UserData
     {
@@ -349,11 +541,7 @@
         public string Email { get; set; }
         public string AvatarUrl { get; set; }
     }
-    public class Budget
-    {
-        public decimal Amount { get; set; }
-    }
-
+ 
     [Inject]
     private Supabase.Client? Supabase { get; set; }
 
@@ -392,8 +580,59 @@
             InvestmentAmount = userData.Investments;
             InvestmentProfit = userData.MonthlyProfit;
         }
+        await LoadUserCards();
     }
- 
+
+    private async Task LoadUserCards()
+    {
+        isLoading = true;
+        try
+        {
+            var response = await Http.GetAsync($"api/UserAccount/{userId}/cards");
+            if (response.IsSuccessStatusCode)
+            {
+                userCards = await response.Content.ReadFromJsonAsync<List<Budget>>();
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Ошибка загрузки карт: {ex.Message}");
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+    private void ShowAddCardModal() => showAddCardModal = true;
+    private void HideAddCardModal() => showAddCardModal = false;
+
+    private async Task AddNewCard()
+    {
+        try
+        {
+            var newCard = new
+            {
+                Description = newCardDescription,
+                InitialAmount = newCardAmount
+            };
+
+            var response = await Http.PostAsJsonAsync($"api/UserAccount/{userId}/add-card", newCard);
+
+            if (response.IsSuccessStatusCode)
+            {
+                await LoadUserCards();
+                HideAddCardModal();
+                newCardDescription = "";
+                newCardAmount = 0;
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Ошибка добавления карты: {ex.Message}");
+        }
+    }
+
     private async Task ProcessAuthState(AuthenticationState authState)
     {
         user = authState.User;
@@ -476,18 +715,11 @@
     {
         try
         {
-            var response = await Http.GetAsync($"api/Budget/users/{userId}");
+            var response = await Http.GetAsync($"api/Budget/users/{userId}/cards-total");
             if (response.IsSuccessStatusCode)
             {
-                var content = await response.Content.ReadAsStringAsync();
-                var options = new JsonSerializerOptions
-                {
-                    PropertyNameCaseInsensitive = true,
-                    NumberHandling = JsonNumberHandling.AllowReadingFromString
-                };
-
-                var budget = JsonSerializer.Deserialize<Budget>(content, options);
-                currentBalance = budget?.Amount ?? 0;
+                var content = await response.Content.ReadFromJsonAsync<CardsTotalResponse>();
+                currentBalance = content?.Total ?? 0;
             }
         }
         catch (Exception ex)
@@ -499,6 +731,13 @@
             StateHasChanged();
         }
     }
+
+    private class CardsTotalResponse
+    {
+        public decimal Total { get; set; }
+    }
+
+
 
     private async Task<UserData> GetCurrentUserAsync()
     {

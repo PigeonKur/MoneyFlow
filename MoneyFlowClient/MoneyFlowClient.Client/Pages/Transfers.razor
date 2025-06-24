@@ -484,6 +484,17 @@
                             <span>₽</span>
                         </div>
                     </div>
+                    <div class="form-section">
+                        <h3>С какой карты списать</h3>
+                        <select @bind="selectedCardId" class="transfer-input">
+                            @foreach (var card in userCards)
+                            {
+                                <option value="@card.BudgetId">
+                                    @($"{card.Description} — {card.Amount:N2} ₽")
+                                </option>
+                            }
+                        </select>
+                    </div>
 
                     <div class="form-section">
                         <h3>Комментарий</h3>
@@ -576,6 +587,8 @@
     private string? _email;
     private string _avatarUrl = "https://ymzpnhfzzfkopqvrudiz.supabase.co/storage/v1/object/sign/avatar/avatar.svg?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9jNTBhNTJhOS1kMzYyLTRjMWUtOGMyNi0wNDM3Yjg2ZTIwYzkiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJhdmF0YXIvYXZhdGFyLnN2ZyIsImlhdCI6MTc1MDY3NzcyNSwiZXhwIjoxNzgyMjEzNzI1fQ.nooWtvyI88n56xp0E0cANLdW2WznFL-9HpRnOuQVMUA"; // URL по умолчанию
     private string? _userEmail;
+    private List<CardItem> userCards = new();
+    private int? selectedCardId;
 
     [Inject]
     private Supabase.Client? Supabase { get; set; }
@@ -588,6 +601,7 @@
 
         await LoadUserBalance();
         await ProcessAuthState(authState);
+        await LoadUserCards();
         await LoadRecentUsers(); // Загружаем последних пользователей
     }
 
@@ -621,6 +635,25 @@
 
         StateHasChanged();
     }
+    private async Task LoadUserCards()
+    {
+        try
+        {
+            var response = await Http.GetAsync($"api/UserAccount/{userId}/cards");
+            if (response.IsSuccessStatusCode)
+            {
+                var cards = await response.Content.ReadFromJsonAsync<List<CardItem>>();
+                userCards = cards;
+                if (userCards.Any())
+                    selectedCardId = userCards.First().BudgetId;
+            }
+        }
+        catch (Exception ex)
+        {
+            await JSRuntime.InvokeVoidAsync("console.error", $"Ошибка загрузки карт: {ex.Message}");
+        }
+    }
+
     private async Task LoadUserData()
     {
         try
@@ -773,19 +806,28 @@
                 await JSRuntime.InvokeVoidAsync("alert", "Введите корректную сумму");
                 return;
             }
-            if (currentBalance < transferAmount)
+            var selectedCard = userCards.FirstOrDefault(c => c.BudgetId == selectedCardId);
+            if (selectedCard == null)
             {
-                await JSRuntime.InvokeVoidAsync("alert", "Недостаточно средств");
+                await JSRuntime.InvokeVoidAsync("alert", "Выберите карту для списания");
                 return;
             }
+            if (selectedCard.Amount < transferAmount)
+            {
+                await JSRuntime.InvokeVoidAsync("alert", "Недостаточно средств на выбранной карте");
+                return;
+            }
+
 
             var transferRequest = new TransferRequest
                 {
                     FromUserId = int.Parse(userId),
                     ToUserId = targetUser.UserId,
                     Amount = transferAmount,
-                    Comment = string.IsNullOrWhiteSpace(comment) ? "Без комментария" : comment
+                    Comment = string.IsNullOrWhiteSpace(comment) ? "Без комментария" : comment,
+                    FromCardId = selectedCard.BudgetId // ← вот эта строка нужна
                 };
+
 
             var response = await Http.PostAsJsonAsync("api/UserAccount/secure-transfer", transferRequest);
 
@@ -794,7 +836,7 @@
                 var result = await response.Content.ReadFromJsonAsync<TransferResult>();
                 await JSRuntime.InvokeVoidAsync("alert", "Перевод выполнен успешно");
 
-                // Проверяем статус транзакции
+                // Проверка статуса транзакции
                 var statusResponse = await Http.GetAsync($"api/UserAccount/transaction-status/{result.TransactionId}");
                 if (statusResponse.IsSuccessStatusCode)
                 {
@@ -802,10 +844,14 @@
                     await JSRuntime.InvokeVoidAsync("console.log", $"Статус транзакции: {status.Status}");
                 }
 
-                showTransferForm = false;
+                // 👉 вот сюда добавь
                 await LoadUserBalance();
+                await LoadUserCards(); // ← обновляем баланс карт
+
+                showTransferForm = false;
                 StateHasChanged();
             }
+
             else
             {
                 var error = await response.Content.ReadAsStringAsync();
@@ -916,6 +962,7 @@
         public int ToUserId { get; set; }
         public decimal Amount { get; set; }
         public string Comment { get; set; }
+        public int FromCardId { get; set; } // ← добавить сюда
     }
     public class UserData
     {
@@ -923,6 +970,13 @@
         public string Email { get; set; }
         public string AvatarUrl { get; set; }
     }
+    public class CardItem
+    {
+        public int BudgetId { get; set; }
+        public string Description { get; set; }
+        public decimal Amount { get; set; }
+    }
+
     // Методы навигации
     private void NavigateToMain() => Navigation.NavigateTo("/main");
     private void NavigateToHistory() => Navigation.NavigateTo("/history");

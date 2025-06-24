@@ -19,5 +19,8 @@ namespace MoneyFlowClient.Client.Models
 
         [JsonPropertyName("period")]
         public string Period { get; set; }
+
+        [JsonPropertyName("description")]
+        public string Description { get; set; }
     }
 }
