@@ -378,6 +378,15 @@
 							{
 								<p>Статус: @transaction.Status.StatusName</p>
 							}
+							@if (transaction.FromBudgetId != null)
+							{
+								<p>С карты: #@transaction.FromBudgetId</p>
+							}
+							@if (transaction.ToBudgetId != null)
+							{
+								<p>На карту: #@transaction.ToBudgetId</p>
+							}
+
 						</div>
 					</div>
 				}
@@ -687,7 +696,10 @@
 		public DateTime TransactionDate { get; set; }
 		public string Comment { get; set; }
 		public TransactionStatusDto Status { get; set; }
-
+		public int? FromBudgetId { get; set; }
+		public string FromBudgetName { get; set; } // Добавлено
+		public int? ToBudgetId { get; set; }
+		public string ToBudgetName { get; set; } // Добавлено
 	}
 
 	public class TransactionStatusDto
