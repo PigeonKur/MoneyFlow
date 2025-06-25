@@ -468,30 +468,18 @@
 	}
 	private async Task LoadUserBalance()
 	{
-		await JSRuntime.InvokeVoidAsync("console.log", "=== Начало загрузки баланса ===");
-
 		try
 		{
-			var response = await Http.GetAsync($"api/Budget/users/{userId}");
-			var content = await response.Content.ReadAsStringAsync();
-			await JSRuntime.InvokeVoidAsync("console.log", $"Ответ сервера: {content}");
-
-			var options = new JsonSerializerOptions
-				{
-					PropertyNameCaseInsensitive = true,
-					NumberHandling = JsonNumberHandling.AllowReadingFromString
-				};
-
-			var budget = JsonSerializer.Deserialize<Budget>(content, options);
-
-			await JSRuntime.InvokeVoidAsync("console.log",
-				$"Десериализовано: Amount={budget?.Amount}, Type={budget?.Amount.GetType()}");
-
-			currentBalance = budget?.Amount ?? 0;
+			var response = await Http.GetAsync($"api/Budget/users/{userId}/cards-total");
+			if (response.IsSuccessStatusCode)
+			{
+				var content = await response.Content.ReadFromJsonAsync<CardsTotalResponse>();
+				currentBalance = content?.Total ?? 0;
+			}
 		}
 		catch (Exception ex)
 		{
-			await JSRuntime.InvokeVoidAsync("console.error", $"Ошибка: {ex}");
+			await JSRuntime.InvokeVoidAsync("console.error", $"Ошибка загрузки баланса: {ex.Message}");
 		}
 		finally
 		{
@@ -517,7 +505,10 @@
 		public string Email { get; set; }
 		public string AvatarUrl { get; set; }
 	}
-
+	private class CardsTotalResponse
+	{
+		public decimal Total { get; set; }
+	}
 }
 
 

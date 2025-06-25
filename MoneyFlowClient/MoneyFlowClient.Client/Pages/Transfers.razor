@@ -723,18 +723,20 @@
     {
         try
         {
-            var response = await Http.GetAsync($"api/Budget/users/{userId}");
+            var response = await Http.GetAsync($"api/Budget/users/{userId}/cards-total");
             if (response.IsSuccessStatusCode)
             {
-                var content = await response.Content.ReadAsStringAsync();
-                var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
-                var budget = JsonSerializer.Deserialize<Budget>(content, options);
-                currentBalance = budget?.Amount;
+                var content = await response.Content.ReadFromJsonAsync<CardsTotalResponse>();
+                currentBalance = content?.Total ?? 0;
             }
         }
         catch (Exception ex)
         {
-            await JSRuntime.InvokeVoidAsync("console.error", ex.Message);
+            await JSRuntime.InvokeVoidAsync("console.error", $"Ошибка загрузки баланса: {ex.Message}");
+        }
+        finally
+        {
+            StateHasChanged();
         }
     }
 
@@ -975,6 +977,10 @@
         public int BudgetId { get; set; }
         public string Description { get; set; }
         public decimal Amount { get; set; }
+    }
+    private class CardsTotalResponse
+    {
+        public decimal Total { get; set; }
     }
 
     // Методы навигации
