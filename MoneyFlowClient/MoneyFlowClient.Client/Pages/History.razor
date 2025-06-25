@@ -270,6 +270,33 @@
 		padding: 20px;
 		color: var(--light-text);
 	}
+
+	.investment-details {
+		margin-top: 10px;
+		padding: 10px;
+		background-color: #f8f9fa;
+		border-radius: 8px;
+	}
+
+	.stock-info {
+		display: flex;
+		align-items: center;
+		gap: 10px;
+		margin-bottom: 5px;
+	}
+
+	.stock-ticker {
+		font-weight: bold;
+		color: var(--primary-color);
+	}
+
+	.stock-name {
+		color: var(--text-color);
+	}
+
+	.stock-quantity {
+		color: var(--light-text);
+	}
 </style>
 
 <div class="screen">
@@ -332,6 +359,7 @@
 				<option value="Перевод">Перевод</option>
 				<option value="Инвестиции">Инвестиции</option>
 				<option value="Покупка">Покупка</option>
+				<option value="Продажа">Продажа</option>
 				<option value="Начисление процентов">Начисление процентов</option>
 			</select>
 
@@ -354,8 +382,15 @@
 					<div class="transaction-card">
 						<div class="transaction-header">
 							<div class="transaction-title">@transaction.TransactionType</div>
-							<div class="transaction-amount @(transaction.Amount >= 0 ? "income" : "expense")">
-								@GetTransactionDirectionSign(transaction)
+							<div class="transaction-amount @(GetTransactionAmountClass(transaction))">
+								@if (transaction.IsInvestment)
+								{
+									@(transaction.TransactionType == "Покупка" ? "−" : "+")
+								}
+								else
+								{
+									@GetTransactionDirectionSign(transaction)
+								}
 								@Math.Abs(transaction.Amount).ToString("N0") ₽
 							</div>
 						</div>
@@ -365,6 +400,7 @@
 							{
 								<p>@transaction.Comment</p>
 							}
+
 							@if (transaction.RelatedUserId.HasValue || transaction.UserId != int.Parse(userId))
 							{
 								<p>
@@ -374,19 +410,41 @@
 																		"Неизвестный пользователь")
 								</p>
 							}
+
 							@if (!string.IsNullOrEmpty(transaction.Status?.StatusName))
 							{
 								<p>Статус: @transaction.Status.StatusName</p>
 							}
+
 							@if (transaction.FromBudgetId != null)
 							{
-								<p>С карты: #@transaction.FromBudgetId</p>
-							}
-							@if (transaction.ToBudgetId != null)
-							{
-								<p>На карту: #@transaction.ToBudgetId</p>
+								<p>С карты: #@transaction.FromBudgetId @transaction.FromBudgetName</p>
 							}
 
+							@if (transaction.ToBudgetId != null)
+							{
+								<p>На карту: #@transaction.ToBudgetId @transaction.ToBudgetName</p>
+							}
+
+							@if (transaction.IsInvestment)
+							{
+								<div class="investment-details">
+									<div class="stock-info">
+										<span class="stock-ticker">@transaction.StockTicker</span>
+										<span class="stock-name">@transaction.StockName</span>
+									</div>
+									<p>Количество: @transaction.Quantity</p>
+									@if (transaction.TransactionType == "Покупка")
+									{
+										<p>Цена покупки: @transaction.PurchasePrice.ToString("N2") ₽</p>
+									}
+									else if (transaction.TransactionType == "Продажа")
+									{
+										<p>Цена продажи: @transaction.SellPrice.ToString("N2") ₽</p>
+										<p>Прибыль: @transaction.CurrentProfit.ToString("N2") ₽</p>
+									}
+								</div>
+							}
 						</div>
 					</div>
 				}
@@ -470,6 +528,7 @@
 
 		StateHasChanged();
 	}
+
 	private async Task LoadUserData()
 	{
 		try
@@ -555,24 +614,25 @@
 				var content = await response.Content.ReadAsStringAsync();
 				await JSRuntime.InvokeVoidAsync("console.log", $"Получены транзакции: {content}");
 
-				var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
-				transactions = JsonSerializer.Deserialize<List<TransactionDto>>(content, options)
-					?? new List<TransactionDto>();
+				var options = new JsonSerializerOptions
+					{
+						PropertyNameCaseInsensitive = true,
+						Converters = { new JsonStringEnumConverter() }
+					};
 
-				await JSRuntime.InvokeVoidAsync("console.log",
-					$"Загружено {transactions.Count} транзакций. Текущий пользователь: {userId}");
+				transactions = await response.Content.ReadFromJsonAsync<List<TransactionDto>>(options)
+					?? new List<TransactionDto>();
 
 				// Обработка направлений транзакций
 				foreach (var t in transactions)
 				{
-					t.Amount = t.UserId == int.Parse(userId) ? -Math.Abs(t.Amount) : Math.Abs(t.Amount);
+					if (!t.IsInvestment)
+					{
+						t.Amount = t.UserId == int.Parse(userId) ? -Math.Abs(t.Amount) : Math.Abs(t.Amount);
+					}
 				}
 
 				await PreloadUserNames();
-
-				// Проверяем кэш после загрузки
-				await JSRuntime.InvokeVoidAsync("console.log",
-					$"Кэш имен: {JsonSerializer.Serialize(userNamesCache)}");
 			}
 		}
 		catch (Exception ex)
@@ -585,6 +645,7 @@
 			StateHasChanged();
 		}
 	}
+
 
 
 	public async Task PreloadUserNames()
@@ -663,6 +724,7 @@
 
 		return $"Пользователь #{userId}";
 	}
+
 	private bool IsOutgoingTransaction(TransactionDto transaction)
 	{
 		return transaction.UserId == int.Parse(userId);
@@ -684,6 +746,15 @@
 			? transaction.RelatedUserId ?? 0
 			: transaction.UserId;
 	}
+	private string GetTransactionAmountClass(TransactionDto transaction)
+	{
+		if (transaction.IsInvestment)
+		{
+			return transaction.TransactionType == "Покупка" ? "expense" : "income";
+		}
+		return transaction.Amount >= 0 ? "income" : "expense";
+	}
+
 	public class TransactionDto
 	{
 		public int TransactionId { get; set; }
@@ -695,15 +766,26 @@
 		public string Comment { get; set; }
 		public TransactionStatusDto Status { get; set; }
 		public int? FromBudgetId { get; set; }
-		public string FromBudgetName { get; set; } // Добавлено
+		public string FromBudgetName { get; set; }
 		public int? ToBudgetId { get; set; }
-		public string ToBudgetName { get; set; } // Добавлено
+		public string ToBudgetName { get; set; }
+
+		// Поля для инвестиций
+		public bool IsInvestment { get; set; }
+		public int? StockId { get; set; }
+		public string StockName { get; set; }
+		public string StockTicker { get; set; }
+		public int Quantity { get; set; }
+		public decimal PurchasePrice { get; set; }
+		public decimal SellPrice { get; set; }
+		public decimal CurrentProfit { get; set; }
 	}
 
 	public class TransactionStatusDto
 	{
 		public int StatusId { get; set; }
 		public string StatusName { get; set; }
+		
 	}
 
 	public class User
@@ -717,44 +799,16 @@
 	{
 		public decimal Amount { get; set; }
 	}
-	public class Transaction
-	{
-		public TransactionType Type { get; set; }
-		public decimal Amount { get; set; }
-		public DateTime Date { get; set; }
-		public List<string> Details { get; set; } = new();
 
-		public bool IsIncome => Type == TransactionType.Replenishment || Type == TransactionType.Interest;
-
-		public string TypeDisplay => Type switch
-		{
-			TransactionType.Replenishment => "Пополнение",
-			TransactionType.Transfer => "Перевод",
-			TransactionType.Investment => "Инвестиции",
-			TransactionType.Purchase => "Покупка",
-			TransactionType.Interest => "Начисление процентов",
-			_ => "Операция"
-		};
-
-		public string DateDisplay => Date.ToString("dd.MM.yyyy, HH:mm");
-	}
 	public class UserData
 	{
 		public string Name { get; set; }
 		public string Email { get; set; }
 		public string AvatarUrl { get; set; }
 	}
+
 	private class CardsTotalResponse
 	{
 		public decimal Total { get; set; }
 	}
-	public enum TransactionType
-	{
-		Replenishment,
-		Transfer,
-		Investment,
-		Purchase,
-		Interest
-	}
 }
-
