@@ -414,6 +414,11 @@
 						<div class="stat-value">@totalBalance.ToString("N0")</div>
 						<div class="stat-label">Общий баланс</div>
 					</div>
+					<div class="stat-item">
+						<div class="stat-value">@totalInvestmentsAmount.ToString("N0")</div>
+						<div class="stat-label">Сумма инвестиций </div>
+					</div>
+
 				</div>
 			</div>
 		</div>
@@ -435,6 +440,7 @@
 	private string? _email;
 	private string _avatarUrl = "https://ymzpnhfzzfkopqvrudiz.supabase.co/storage/v1/object/sign/avatar/avatar.svg?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9jNTBhNTJhOS1kMzYyLTRjMWUtOGMyNi0wNDM3Yjg2ZTIwYzkiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJhdmF0YXIvYXZhdGFyLnN2ZyIsImlhdCI6MTc1MDY3NzcyNSwiZXhwIjoxNzgyMjEzNzI1fQ.nooWtvyI88n56xp0E0cANLdW2WznFL-9HpRnOuQVMUA"; // URL по умолчанию
 	private string? _userEmail;
+	private decimal totalInvestmentsAmount;
 
 	[Inject]
 	private Supabase.Client? Supabase { get; set; }
@@ -460,7 +466,9 @@
 		public int TotalUsers { get; set; }
 		public int TotalTransactions { get; set; }
 		public decimal TotalBalance { get; set; }
+		public decimal TotalInvestmentsAmount { get; set; }
 	}
+
 	private class CardsTotalResponse
 	{
 		public decimal Total { get; set; }
@@ -561,6 +569,7 @@
 			return false;
 		}
 	}
+	
 	private async Task LoadUserBalance()
 	{
 		try
@@ -600,13 +609,15 @@
 			}
 
 			// Загрузка статистики
-			var statsResponse = await Http.GetAsync("api/Admin/stats");
+			var statsResponse = await Http.GetAsync("api/UserAccount/stats");
 			if (statsResponse.IsSuccessStatusCode)
 			{
 				var stats = await statsResponse.Content.ReadFromJsonAsync<AdminStats>();
 				totalTransactions = stats?.TotalTransactions ?? 0;
 				totalBalance = stats?.TotalBalance ?? 0;
+				totalInvestmentsAmount = stats?.TotalInvestmentsAmount ?? 0;
 			}
+
 		}
 		catch (Exception ex)
 		{
