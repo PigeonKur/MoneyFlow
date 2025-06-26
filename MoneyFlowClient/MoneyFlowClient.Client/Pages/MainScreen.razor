@@ -12,6 +12,9 @@
 @inject AuthenticationStateProvider AuthenticationStateProvider
 @inject IJSRuntime JSRuntime
 
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="js/dashboardCharts.js"></script>
+
 <style>
 	/* Основные стили */
 	:root {
@@ -285,7 +288,7 @@
 					</div>
 				</div>
 				<div class="chart-container">
-					<div class="chart-placeholder">График доходов и расходов</div>
+					<canvas id="incomeExpenseChart"></canvas>
 				</div>
 			</div>
 
@@ -302,7 +305,7 @@
 					</div>
 				</div>
 				<div class="chart-container">
-					<div class="chart-placeholder">График поступлений</div>
+					<canvas id="incomePieChart"></canvas>
 				</div>
 			</div>
 		</div>
@@ -322,7 +325,7 @@
 					</div>
 				</div>
 				<div class="chart-container">
-					<div class="chart-placeholder">График динамики остатков</div>
+					<canvas id="balanceTrendChart"></canvas>
 				</div>
 			</div>
 
@@ -339,8 +342,7 @@
 					</div>
 				</div>
 				<div class="chart-container">
-					<div class="chart-placeholder">График расходов</div>
-
+					<canvas id="expensePieChart"></canvas>
 				</div>
 			</div>
 		</div>
@@ -371,6 +373,13 @@
 	private string? _email;
 	private string _avatarUrl = "https://ymzpnhfzzfkopqvrudiz.supabase.co/storage/v1/object/sign/avatar/avatar.svg?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9jNTBhNTJhOS1kMzYyLTRjMWUtOGMyNi0wNDM3Yjg2ZTIwYzkiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJhdmF0YXIvYXZhdGFyLnN2ZyIsImlhdCI6MTc1MDY3NzcyNSwiZXhwIjoxNzgyMjEzNzI1fQ.nooWtvyI88n56xp0E0cANLdW2WznFL-9HpRnOuQVMUA"; // URL по умолчанию
 	private string? _userEmail;
+	private List<TransactionDto> transactions = new();
+	private List<BalanceHistoryDto> balanceHistory = new();
+	private decimal totalIncome;
+	private decimal totalExpense;
+	private Dictionary<string, decimal> incomeCategories = new();
+	private Dictionary<string, decimal> expenseCategories = new();
+	private bool isLoading = false;
 
 	[Inject]
 	private Supabase.Client? Supabase { get; set; }
@@ -388,6 +397,10 @@
 		var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
 		user = authState.User;
 		await ProcessAuthState(authState);
+		if (user.Identity?.IsAuthenticated == true)
+		{
+			await LoadDashboardData();
+		}
 	}
 
 	private async Task ProcessAuthState(AuthenticationState authState)
@@ -495,10 +508,186 @@
 		}
 	}
 
+	private async Task LoadDashboardData()
+	{
+		isLoading = true;
+		StateHasChanged();
+
+		try
+		{
+			var response = await Http.GetAsync($"api/Balance/dashboard-data?userId={userId}&period={selectedPeriod}");
+
+			if (response.IsSuccessStatusCode)
+			{
+				var dashboardData = await response.Content.ReadFromJsonAsync<DashboardData>();
+
+				transactions = dashboardData.Transactions;
+				balanceHistory = dashboardData.BalanceHistory;
+
+				// Пересчитываем категории с учетом инвестиций
+				incomeCategories = CalculateIncomeCategories(transactions);
+				expenseCategories = CalculateExpenseCategories(transactions);
+
+				totalIncome = incomeCategories.Sum(x => x.Value);
+				totalExpense = expenseCategories.Sum(x => x.Value);
+			}
+
+			await InitializeCharts();
+		}
+		catch (Exception ex)
+		{
+			await JSRuntime.InvokeVoidAsync("console.error", $"Ошибка загрузки данных: {ex.Message}");
+		}
+		finally
+		{
+			isLoading = false;
+			StateHasChanged();
+		}
+	}
+
+	// Новые методы для расчета категорий
+	private Dictionary<string, decimal> CalculateIncomeCategories(List<TransactionDto> transactions)
+	{
+		return transactions
+			.Where(t => t.Amount > 0) // Доходы
+			.GroupBy(t => t.IsInvestment
+				? (t.TransactionType == "Продажа акций" ? "Продажа акций" : t.TransactionType)
+				: t.TransactionType)
+			.ToDictionary(g => g.Key, g => g.Sum(t => t.Amount));
+	}
+
+	private Dictionary<string, decimal> CalculateExpenseCategories(List<TransactionDto> transactions)
+	{
+		return transactions
+			.Where(t => t.Amount < 0) // Расходы
+			.GroupBy(t => t.IsInvestment
+				? (t.TransactionType == "Покупка акций" ? "Покупка акций" : t.TransactionType)
+				: t.TransactionType)
+			.ToDictionary(g => g.Key, g => Math.Abs(g.Sum(t => t.Amount)));
+	}	
+	private async Task OnPeriodChanged()
+	{
+		await LoadDashboardData();
+	}
 	private async Task InitializeCharts()
 	{
-		// инициализация графиков
+		if (expenseCategories.Any())
+		{
+			// Убедимся, что нет нулевых значений
+			var validExpenseCategories = expenseCategories
+				.Where(x => x.Value > 0)
+				.ToDictionary(x => x.Key, x => x.Value);
+
+			if (validExpenseCategories.Any())
+			{
+				var expenseLabels = validExpenseCategories.Keys.ToArray();
+				var expenseData = validExpenseCategories.Values.Select(v => (double)v).ToArray();
+				var expenseColors = GenerateColors(validExpenseCategories.Count);
+
+				await JSRuntime.InvokeVoidAsync("dashboardCharts.renderMiniPieChart",
+					"expensePieChart", expenseLabels, expenseData, expenseColors, $"Всего: {totalExpense:N0} ₽");
+			}
+			else
+			{
+				Console.WriteLine("Нет данных для отображения круговой диаграммы расходов");
+			}
+		}
+		try
+		{
+			// 1. График доходов/расходов
+			if (transactions.Any())
+			{
+				var transactionsByMonth = transactions
+					.GroupBy(t => new { t.TransactionDate.Year, t.TransactionDate.Month })
+					.OrderBy(g => g.Key.Year)
+					.ThenBy(g => g.Key.Month)
+					.ToList();
+
+				var monthLabels = transactionsByMonth
+					.Select(g => new DateTime(g.Key.Year, g.Key.Month, 1).ToString("MMM yyyy"))
+					.ToArray();
+
+				var incomesByMonth = transactionsByMonth
+					.Select(g => (double)g.Where(t => t.Amount > 0).Sum(t => t.Amount))
+					.ToArray();
+
+				var expensesByMonth = transactionsByMonth
+					.Select(g => (double)g.Where(t => t.Amount < 0).Sum(t => Math.Abs(t.Amount)))
+					.ToArray();
+
+				await JSRuntime.InvokeVoidAsync("dashboardCharts.renderIncomeExpenseChart",
+					"incomeExpenseChart", monthLabels, incomesByMonth, expensesByMonth);
+			}
+
+			// 2. График динамики остатков
+			if (balanceHistory.Any())
+			{
+				var balanceLabels = balanceHistory
+					.OrderBy(b => b.Date)
+					.Select(b => b.Date.ToString("dd MMM"))
+					.ToArray();
+
+				var balanceData = balanceHistory
+					.OrderBy(b => b.Date)
+					.Select(b => (double)b.Balance)
+					.ToArray();
+
+				await JSRuntime.InvokeVoidAsync("dashboardCharts.renderBalanceTrendChart",
+					"balanceTrendChart", balanceLabels, balanceData);
+			}
+
+			// 3. Круговые диаграммы
+			if (incomeCategories.Any())
+			{
+				var incomeLabels = incomeCategories.Keys.ToArray();
+				var incomeData = incomeCategories.Values.Select(v => (double)v).ToArray();
+				var incomeColors = GenerateColors(incomeCategories.Count);
+
+				await JSRuntime.InvokeVoidAsync("dashboardCharts.renderMiniPieChart",
+					"incomePieChart", incomeLabels, incomeData, incomeColors, $"Всего: {totalIncome:N0} ₽");
+			}
+
+			if (expenseCategories.Any())
+			{
+				var expenseLabels = expenseCategories.Keys.ToArray();
+				var expenseData = expenseCategories.Values.Select(v => (double)v).ToArray();
+				var expenseColors = GenerateColors(expenseCategories.Count);
+
+				await JSRuntime.InvokeVoidAsync("dashboardCharts.renderMiniPieChart",
+					"expensePieChart", expenseLabels, expenseData, expenseColors, $"Всего: {totalExpense:N0} ₽");
+			}
+		}
+		catch (Exception ex)
+		{
+			await JSRuntime.InvokeVoidAsync("console.error", $"Ошибка инициализации графиков: {ex.Message}");
+		}
 	}
+
+	private string[] GenerateColors(int count)
+	{
+		var colors = new[]
+			{
+		"#2e86de", "#28a745", "#ffc107", "#dc3545", "#6c757d",
+		"#6610f2", "#fd7e14", "#20c997", "#0dcaf0", "#ff6b6b",
+		"#8e44ad", "#3498db", "#e74c3c", "#1abc9c", "#f39c12"
+		};
+
+		// Если нужно больше цветов, чем есть в массиве, начинаем повторять
+		var result = new List<string>();
+		for (int i = 0; i < count; i++)
+		{
+			result.Add(colors[i % colors.Length]);
+		}
+
+		return result.ToArray();
+	}
+
+	public class BalanceHistoryDto
+	{
+		public DateTime Date { get; set; }
+		public decimal Balance { get; set; }
+	}
+
 	public class UserData
 	{
 		public string Name { get; set; }
@@ -508,6 +697,47 @@
 	private class CardsTotalResponse
 	{
 		public decimal Total { get; set; }
+	}
+	public class TransactionDto
+	{
+		public int TransactionId { get; set; }
+		public int UserId { get; set; }
+		public int? RelatedUserId { get; set; }
+		public string TransactionType { get; set; }
+		public decimal Amount { get; set; }
+		public DateTime TransactionDate { get; set; }
+		public string Comment { get; set; }
+		public TransactionStatusDto Status { get; set; }
+		public int? FromBudgetId { get; set; }
+		public string FromBudgetName { get; set; }
+		public int? ToBudgetId { get; set; }
+		public string ToBudgetName { get; set; }
+
+		// Поля для инвестиций
+		public bool IsInvestment { get; set; }
+		public int? StockId { get; set; }
+		public string StockName { get; set; }
+		public string StockTicker { get; set; }
+		public int Quantity { get; set; }
+		public decimal PurchasePrice { get; set; }
+		public decimal SellPrice { get; set; }
+		public decimal CurrentProfit { get; set; }
+	}
+	public class TransactionStatusDto
+	{
+		public int StatusId { get; set; }
+		public string StatusName { get; set; }
+
+	}
+
+	public class DashboardData
+	{
+		public List<TransactionDto> Transactions { get; set; }
+		public List<BalanceHistoryDto> BalanceHistory { get; set; }
+		public Dictionary<string, decimal> IncomeCategories { get; set; }
+		public Dictionary<string, decimal> ExpenseCategories { get; set; }
+		public decimal TotalIncome { get; set; }
+		public decimal TotalExpense { get; set; }
 	}
 }
 

@@ -122,3 +122,4 @@ export function renderProfitabilityChart(canvasId, labels, data) {
         console.error('Error rendering profitability chart:', error);
     }
 }
+
