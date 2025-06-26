@@ -19,7 +19,7 @@ namespace MoneyFlowTests.AdminPanel
         public void GetAdminStats_ReturnsZeroStats_WhenNoDataExists()
         {
             var options = new DbContextOptionsBuilder<AppDbContext>()
-                .UseInMemoryDatabase(databaseName: "TestDb3")
+                .UseInMemoryDatabase(databaseName: "TestDb5")
                 .Options;
 
             using var context = new AppDbContext(options);
