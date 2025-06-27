@@ -8,6 +8,7 @@
 @using System.Net
 @using System.Text.Json
 @using System.Text.Json.Serialization
+@using System.Globalization
 @inject HttpClient Http
 @inject AuthenticationStateProvider AuthenticationStateProvider
 @inject IJSRuntime JSRuntime
@@ -279,7 +280,7 @@
 				<div class="card-header">
 					<h2>Доходы и расходы</h2>
 					<div class="period-selector">
-						<select @bind="selectedPeriod">
+						<select value="@selectedPeriod" @onchange="@(e => OnPeriodChanged(e, "main"))">
 							<option value="day">День</option>
 							<option value="week">Неделя</option>
 							<option value="month">Месяц</option>
@@ -296,7 +297,8 @@
 				<div class="card-header">
 					<h2>Поступления за период</h2>
 					<div class="period-selector">
-						<select @bind="selectedMiniIncomePeriod">
+						<select value="@selectedMiniIncomePeriod" @onchange="@(e => OnPeriodChanged(e, "income"))">
+
 							<option value="day">День</option>
 							<option value="week">Неделя</option>
 							<option value="month">Месяц</option>
@@ -316,7 +318,8 @@
 				<div class="card-header">
 					<h2>Динамика остатков</h2>
 					<div class="period-selector">
-						<select @bind="selectedTrendPeriod">
+						<select value="@selectedTrendPeriod" @onchange="@(e => OnPeriodChanged(e, "trend"))">
+
 							<option value="day">День</option>
 							<option value="week">Неделя</option>
 							<option value="month">Месяц</option>
@@ -333,7 +336,7 @@
 				<div class="card-header">
 					<h2>Расходы за период</h2>
 					<div class="period-selector">
-						<select @bind="selectedMiniExpensePeriod">
+						<select value="@selectedMiniExpensePeriod" @onchange="@(e => OnPeriodChanged(e, "expense"))">
 							<option value="day">День</option>
 							<option value="week">Неделя</option>
 							<option value="month">Месяц</option>
@@ -380,6 +383,10 @@
 	private Dictionary<string, decimal> incomeCategories = new();
 	private Dictionary<string, decimal> expenseCategories = new();
 	private bool isLoading = false;
+	private List<TransactionDto> mainChartTransactions = new();
+	private List<TransactionDto> incomeChartTransactions = new();
+	private List<TransactionDto> expenseChartTransactions = new();
+	private List<BalanceHistoryDto> trendChartBalanceHistory = new();
 
 	[Inject]
 	private Supabase.Client? Supabase { get; set; }
@@ -515,18 +522,41 @@
 
 		try
 		{
-			var response = await Http.GetAsync($"api/Balance/dashboard-data?userId={userId}&period={selectedPeriod}");
+			var url = $"api/Balance/dashboard-data?userId={userId}" +
+				$"&period={selectedPeriod}" +
+				$"&trendPeriod={selectedTrendPeriod}" +
+				$"&incomePeriod={selectedMiniIncomePeriod}" +
+				$"&expensePeriod={selectedMiniExpensePeriod}";
+
+			var response = await Http.GetAsync(url);
 
 			if (response.IsSuccessStatusCode)
 			{
 				var dashboardData = await response.Content.ReadFromJsonAsync<DashboardData>();
 
-				transactions = dashboardData.Transactions;
-				balanceHistory = dashboardData.BalanceHistory;
+				// Основной график
+				mainChartTransactions = dashboardData.Transactions
+					.Where(t => t.TransactionDate >= GetStartDate(selectedPeriod, DateTime.Now))
+					.ToList();
 
-				// Пересчитываем категории с учетом инвестиций
-				incomeCategories = CalculateIncomeCategories(transactions);
-				expenseCategories = CalculateExpenseCategories(transactions);
+				// График доходов
+				incomeChartTransactions = dashboardData.Transactions
+					.Where(t => t.TransactionDate >= GetStartDate(selectedMiniIncomePeriod, DateTime.Now))
+					.ToList();
+
+				// График расходов
+				expenseChartTransactions = dashboardData.Transactions
+					.Where(t => t.TransactionDate >= GetStartDate(selectedMiniExpensePeriod, DateTime.Now))
+					.ToList();
+
+				// График тренда
+				trendChartBalanceHistory = dashboardData.BalanceHistory
+					.Where(b => b.Date >= GetStartDate(selectedTrendPeriod, DateTime.Now))
+					.ToList();
+
+				// Пересчитываем категории
+				incomeCategories = CalculateIncomeCategories(incomeChartTransactions);
+				expenseCategories = CalculateExpenseCategories(expenseChartTransactions);
 
 				totalIncome = incomeCategories.Sum(x => x.Value);
 				totalExpense = expenseCategories.Sum(x => x.Value);
@@ -545,6 +575,18 @@
 		}
 	}
 
+	private DateTime GetStartDate(string period, DateTime now)
+	{
+		return period switch
+		{
+			"day" => now.Date,
+			"week" => now.AddDays(-7),
+			"month" => now.AddMonths(-1),
+			"year" => now.AddYears(-1),
+			_ => now.AddMonths(-1) // по умолчанию месяц
+		};
+	}
+
 	// Новые методы для расчета категорий
 	private Dictionary<string, decimal> CalculateIncomeCategories(List<TransactionDto> transactions)
 	{
@@ -558,76 +600,79 @@
 
 	private Dictionary<string, decimal> CalculateExpenseCategories(List<TransactionDto> transactions)
 	{
-		return transactions
-			.Where(t => t.Amount < 0) // Расходы
-			.GroupBy(t => t.IsInvestment
-				? (t.TransactionType == "Покупка акций" ? "Покупка акций" : t.TransactionType)
-				: t.TransactionType)
-			.ToDictionary(g => g.Key, g => Math.Abs(g.Sum(t => t.Amount)));
-	}	
-	private async Task OnPeriodChanged()
-	{
-		await LoadDashboardData();
-	}
-	private async Task InitializeCharts()
-	{
-		if (expenseCategories.Any())
+		var expenses = new Dictionary<string, decimal>();
+
+		foreach (var t in transactions.Where(t => t.Amount < 0))
 		{
-			// Убедимся, что нет нулевых значений
-			var validExpenseCategories = expenseCategories
-				.Where(x => x.Value > 0)
-				.ToDictionary(x => x.Key, x => x.Value);
+			string category;
 
-			if (validExpenseCategories.Any())
+			if (t.IsInvestment && t.TransactionType == "Покупка акций")
 			{
-				var expenseLabels = validExpenseCategories.Keys.ToArray();
-				var expenseData = validExpenseCategories.Values.Select(v => (double)v).ToArray();
-				var expenseColors = GenerateColors(validExpenseCategories.Count);
-
-				await JSRuntime.InvokeVoidAsync("dashboardCharts.renderMiniPieChart",
-					"expensePieChart", expenseLabels, expenseData, expenseColors, $"Всего: {totalExpense:N0} ₽");
+				category = "Покупка акций";
+			}
+			else if (t.TransactionType == "Перевод")
+			{
+				category = "Переводы";
 			}
 			else
 			{
-				Console.WriteLine("Нет данных для отображения круговой диаграммы расходов");
+				category = t.TransactionType;
 			}
+
+			var absAmount = Math.Abs(t.Amount);
+			if (expenses.ContainsKey(category))
+				expenses[category] += absAmount;
+			else
+				expenses[category] = absAmount;
 		}
+
+		return expenses;
+	}
+	private async Task OnPeriodChanged(ChangeEventArgs e, string chartType)
+	{
+		switch (chartType)
+		{
+			case "main":
+				selectedPeriod = e.Value.ToString();
+				break;
+			case "trend":
+				selectedTrendPeriod = e.Value.ToString();
+				break;
+			case "income":
+				selectedMiniIncomePeriod = e.Value.ToString();
+				break;
+			case "expense":
+				selectedMiniExpensePeriod = e.Value.ToString();
+				break;
+		}
+
+		await LoadDashboardData();
+	}
+
+	private async Task InitializeCharts()
+	{
 		try
 		{
-			// 1. График доходов/расходов
-			if (transactions.Any())
+			// 1. График доходов/расходов (использует mainChartTransactions)
+			if (mainChartTransactions.Any())
 			{
-				var transactionsByMonth = transactions
-					.GroupBy(t => new { t.TransactionDate.Year, t.TransactionDate.Month })
-					.OrderBy(g => g.Key.Year)
-					.ThenBy(g => g.Key.Month)
-					.ToList();
-
-				var monthLabels = transactionsByMonth
-					.Select(g => new DateTime(g.Key.Year, g.Key.Month, 1).ToString("MMM yyyy"))
-					.ToArray();
-
-				var incomesByMonth = transactionsByMonth
-					.Select(g => (double)g.Where(t => t.Amount > 0).Sum(t => t.Amount))
-					.ToArray();
-
-				var expensesByMonth = transactionsByMonth
-					.Select(g => (double)g.Where(t => t.Amount < 0).Sum(t => Math.Abs(t.Amount)))
-					.ToArray();
-
+				var groupedTransactions = GroupTransactions(mainChartTransactions, selectedPeriod);
 				await JSRuntime.InvokeVoidAsync("dashboardCharts.renderIncomeExpenseChart",
-					"incomeExpenseChart", monthLabels, incomesByMonth, expensesByMonth);
+					"incomeExpenseChart",
+					groupedTransactions.Labels,
+					groupedTransactions.Incomes,
+					groupedTransactions.Expenses);
 			}
 
-			// 2. График динамики остатков
-			if (balanceHistory.Any())
+			// 2. График динамики остатков (использует trendChartBalanceHistory)
+			if (trendChartBalanceHistory.Any())
 			{
-				var balanceLabels = balanceHistory
+				var balanceLabels = trendChartBalanceHistory
 					.OrderBy(b => b.Date)
-					.Select(b => b.Date.ToString("dd MMM"))
+					.Select(b => b.Date.ToString(GetDateFormat(selectedTrendPeriod)))
 					.ToArray();
 
-				var balanceData = balanceHistory
+				var balanceData = trendChartBalanceHistory
 					.OrderBy(b => b.Date)
 					.Select(b => (double)b.Balance)
 					.ToArray();
@@ -637,25 +682,8 @@
 			}
 
 			// 3. Круговые диаграммы
-			if (incomeCategories.Any())
-			{
-				var incomeLabels = incomeCategories.Keys.ToArray();
-				var incomeData = incomeCategories.Values.Select(v => (double)v).ToArray();
-				var incomeColors = GenerateColors(incomeCategories.Count);
-
-				await JSRuntime.InvokeVoidAsync("dashboardCharts.renderMiniPieChart",
-					"incomePieChart", incomeLabels, incomeData, incomeColors, $"Всего: {totalIncome:N0} ₽");
-			}
-
-			if (expenseCategories.Any())
-			{
-				var expenseLabels = expenseCategories.Keys.ToArray();
-				var expenseData = expenseCategories.Values.Select(v => (double)v).ToArray();
-				var expenseColors = GenerateColors(expenseCategories.Count);
-
-				await JSRuntime.InvokeVoidAsync("dashboardCharts.renderMiniPieChart",
-					"expensePieChart", expenseLabels, expenseData, expenseColors, $"Всего: {totalExpense:N0} ₽");
-			}
+			await UpdatePieChart("incomePieChart", incomeCategories, totalIncome, selectedMiniIncomePeriod);
+			await UpdatePieChart("expensePieChart", expenseCategories, totalExpense, selectedMiniExpensePeriod);
 		}
 		catch (Exception ex)
 		{
@@ -663,22 +691,130 @@
 		}
 	}
 
-	private string[] GenerateColors(int count)
+	private async Task UpdatePieChart(string chartId, Dictionary<string, decimal> categories, decimal total, string period)
+	{
+		if (categories.Any())
+		{
+			var labels = categories.Keys.ToArray();
+			var data = categories.Values.Select(v => (double)v).ToArray();
+			var colors = chartId.Contains("income")
+				? GenerateIncomeColors(categories.Count)
+				: GenerateExpenseColors(categories.Count);
+
+			await JSRuntime.InvokeVoidAsync("dashboardCharts.renderMiniPieChart",
+				chartId, labels, data, colors, $"Всего: {total:N0} ₽ ({GetPeriodName(period)})");
+		}
+	}
+	private (string[] Labels, double[] Incomes, double[] Expenses) GroupTransactions(List<TransactionDto> transactions, string period)
+	{
+		switch (period)
+		{
+			case "day":
+				var byDay = transactions
+					.GroupBy(t => t.TransactionDate.Date)
+					.OrderBy(g => g.Key);
+
+				return (
+					byDay.Select(g => g.Key.ToString("dd MMM")).ToArray(),
+					byDay.Select(g => (double)g.Where(t => t.Amount > 0).Sum(t => t.Amount)).ToArray(),
+					byDay.Select(g => (double)g.Where(t => t.Amount < 0).Sum(t => Math.Abs(t.Amount))).ToArray()
+				);
+
+			case "week":
+				var byWeek = transactions
+					.GroupBy(t => CultureInfo.CurrentCulture.Calendar.GetWeekOfYear(
+						t.TransactionDate,
+						CalendarWeekRule.FirstDay,
+						DayOfWeek.Monday))
+					.OrderBy(g => g.Key);
+
+				return (
+					byWeek.Select(g => $"Неделя {g.Key}").ToArray(),
+					byWeek.Select(g => (double)g.Where(t => t.Amount > 0).Sum(t => t.Amount)).ToArray(),
+					byWeek.Select(g => (double)g.Where(t => t.Amount < 0).Sum(t => Math.Abs(t.Amount))).ToArray()
+				);
+
+			case "year":
+				var byYear = transactions
+					.GroupBy(t => t.TransactionDate.Year)
+					.OrderBy(g => g.Key);
+
+				return (
+					byYear.Select(g => g.Key.ToString()).ToArray(),
+					byYear.Select(g => (double)g.Where(t => t.Amount > 0).Sum(t => t.Amount)).ToArray(),
+					byYear.Select(g => (double)g.Where(t => t.Amount < 0).Sum(t => Math.Abs(t.Amount))).ToArray()
+				);
+
+			case "month":
+			default:
+				var byMonth = transactions
+					.GroupBy(t => new { t.TransactionDate.Year, t.TransactionDate.Month })
+					.OrderBy(g => g.Key.Year)
+					.ThenBy(g => g.Key.Month);
+
+				return (
+					byMonth.Select(g => new DateTime(g.Key.Year, g.Key.Month, 1).ToString("MMM yyyy")).ToArray(),
+					byMonth.Select(g => (double)g.Where(t => t.Amount > 0).Sum(t => t.Amount)).ToArray(),
+					byMonth.Select(g => (double)g.Where(t => t.Amount < 0).Sum(t => Math.Abs(t.Amount))).ToArray()
+				);
+		}
+	}
+
+	
+
+	private string GetDateFormat(string period) => period switch
+	{
+		"day" => "dd MMM HH:mm",
+		"week" => "dd MMM",
+		"month" => "dd MMM",
+		"year" => "MMM yyyy",
+		_ => "dd MMM yyyy"
+	};
+
+	private string GetPeriodName(string period) => period switch
+	{
+		"day" => "день",
+		"week" => "неделя",
+		"month" => "месяц",
+		"year" => "год",
+		_ => "период"
+	};
+
+	private string[] GenerateIncomeColors(int count)
 	{
 		var colors = new[]
-			{
-		"#2e86de", "#28a745", "#ffc107", "#dc3545", "#6c757d",
-		"#6610f2", "#fd7e14", "#20c997", "#0dcaf0", "#ff6b6b",
-		"#8e44ad", "#3498db", "#e74c3c", "#1abc9c", "#f39c12"
-		};
+		{
+		"#2e86de", "#28a745", "#20c997", "#0dcaf0",
+		"#3498db", "#1abc9c", "#8e44ad", "#6c757d"
+	};
 
-		// Если нужно больше цветов, чем есть в массиве, начинаем повторять
 		var result = new List<string>();
 		for (int i = 0; i < count; i++)
 		{
 			result.Add(colors[i % colors.Length]);
 		}
+		return result.ToArray();
+	}
 
+	private string[] GenerateExpenseColors(int count)
+	{
+		var colors = new[]
+		{
+		"#dc3545", // красный
+        "#fd7e14", // оранжевый
+        "#ff6b6b", // светлый красный
+        "#e74c3c", // алый
+        "#d63031", // темно-красный
+        "#e17055", // коралловый
+        "#ff7675", // розовато-красный
+        "#ff5252"  // ярко-красный
+    };
+
+		var result = new List<string>();
+		for (int i = 0; i < count; i++)
+		{
+			result.Add(colors[i % colors.Length]);
+		}
 		return result.ToArray();
 	}
 
