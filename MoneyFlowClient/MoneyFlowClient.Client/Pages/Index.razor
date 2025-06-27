@@ -9,13 +9,13 @@
         margin: 0;
         font-family: Arial, sans-serif;
         background: #f5f5f5;
-        padding: 0 20px; /* Добавил отступы по бокам для всего контента */
+        padding: 0;
     }
 
     .dashboard-container {
-        max-width: none; /* Убрал ограничение по ширине */
-        margin: 0;
-        padding: 20px 0; /* Оставил только вертикальные отступы */
+        width: 100%;
+        padding: 20px;
+        box-sizing: border-box;
     }
 
     .page-title {
@@ -35,117 +35,108 @@
     .card {
         background: white;
         border-radius: 8px;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         padding: 20px;
-        width: 100%;
         display: flex;
-        flex-direction: column; /* Чтобы контент внутри карточки правильно растягивался */
+        flex-direction: column;
     }
 
     .wide-card {
-        flex: 4; /* Еще больше увеличил пропорцию */
+        flex: 3;
+        height: 350px;
     }
 
     .small-card {
         flex: 1;
-        min-height: 400px; /* Фиксированная высота для маленьких карточек */
+        height: 350px;
+        position: relative;
     }
 
     .card-header {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        margin-bottom: 15px;
+        margin-bottom: 10px; /* Уменьшил отступ */
     }
 
-    .period-selector {
-        display: flex;
-        gap: 10px;
-    }
-
-    .period-btn {
-        background: none;
-        border: 1px solid #ddd;
-        padding: 5px 10px;
-        border-radius: 4px;
-        cursor: pointer;
-        font-size: 11px;
-    }
-
-    .amount {
-        font-size: 24px;
-        font-weight: bold;
-        margin: 10px 0 5px 0; /* Уменьшил отступ снизу */
-    }
-
-    .amount-label {
-        color: #666;
-        margin-bottom: 15px;
-        font-size: 14px;
-    }
-
-    .chart-placeholder {
-        background: #f9f9f9;
-        flex-grow: 1; /* Растягиваем график на все доступное пространство */
+    .card-image-container {
+        flex-grow: 1;
         display: flex;
         align-items: center;
         justify-content: center;
-        color: #888;
+        overflow: hidden;
+    }
+
+    .card img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        object-position: center; /* Центрируем изображение */
         border-radius: 4px;
-        margin-top: 10px;
-        min-height: 200px; /* Минимальная высота */
+    }
+
+    /* Стили для текста */
+    .card-title {
+        font-size: 16px;
+        font-weight: bold;
+        margin: 0;
+    }
+
+    .amount {
+        position: absolute;
+        bottom: 30px;
+        right: 30px;
+        font-size: 24px;
+        font-weight: bold;
+        background: white;
+        padding: 5px 10px;
+        border-radius: 4px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+
+    .period-selector {
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        padding: 5px;
+        font-size: 14px;
     }
 </style>
 
-<!-- Основной контейнер (как в Figma) -->
+<!-- Основной контейнер -->
 <div class="dashboard-container">
     <h1 class="page-title">Рабочий стол</h1>
 
-    <!-- Первый ряд: широкая карточка + узкая -->
+    <!-- Первый ряд -->
     <div class="dashboard-row">
+        <!-- Основной график -->
         <div class="card wide-card">
-            <div class="card-header">
-                <h2>Доходы и расходы</h2>
-                <div class="period-selector">
-                    <button class="period-btn">Год ▼</button>
-                    <button class="period-btn">Период ▼</button>
-                </div>
+            <div class="card-image-container">
+                <img src="img/graph_trend.svg" alt="График доходов и расходов" />
             </div>
-            <div class="chart-placeholder">График доходов и расходов</div>
         </div>
 
+        <!-- График доходов -->
         <div class="card small-card">
-            <div class="card-header">
-                <h2>Поступления за период</h2>
-                <button class="period-btn">Период ▼</button>
+            <div class="card-image-container">
+                <img src="img/graph_income.svg" alt="График доходов" />
             </div>
-            <div class="amount">4 500 ₽</div>
-            <div class="amount-label">Поступления за период</div>
-            <div class="chart-placeholder">График поступлений</div>
         </div>
     </div>
 
-    <!-- Второй ряд: широкая карточка + узкая -->
+    <!-- Второй ряд -->
     <div class="dashboard-row">
+        <!-- График динамики -->
         <div class="card wide-card">
-            <div class="card-header">
-                <h2>Динамика остатков денег</h2>
-                <div class="period-selector">
-                    <button class="period-btn">Год ▼</button>
-                    <button class="period-btn">Период ▼</button>
-                </div>
+            <div class="card-image-container">
+                <img src="img/graph.svg" alt="График динамики" />
             </div>
-            <div class="chart-placeholder">График динамики остатков</div>
         </div>
 
+        <!-- График расходов -->
         <div class="card small-card">
-            <div class="card-header">
-                <h2>Расходы за период</h2>
-                <button class="period-btn">Период ▼</button>
+              <div class="card-image-container">
+                <img src="img/graph_expense.svg" alt="График расходов" />
             </div>
-            <div class="amount">2 423 ₽</div>
-            <div class="amount-label">Расходы за период</div>
-            <div class="chart-placeholder">График расходов</div>
         </div>
     </div>
 </div>
