@@ -23,7 +23,6 @@ namespace MoneyFlowTests.HistoryTest
 
         public HistoryTests()
         {
-            // Инициализация мока Supabase.Client
             _supabaseMock = new Mock<Client>("https://localhost", "anon-key", null);
             Services.AddSingleton(_supabaseMock.Object);
 
@@ -53,10 +52,8 @@ namespace MoneyFlowTests.HistoryTest
         [Fact]
         public void Component_Renders_Correctly()
         {
-            // Arrange
             var component = RenderComponent<History>();
 
-            // Assert
             Assert.Contains("История операций", component.Markup);
             Assert.Contains("Неделя", component.Markup);
             Assert.Contains("Месяц", component.Markup);
@@ -66,35 +63,28 @@ namespace MoneyFlowTests.HistoryTest
         [Fact]
         public void GetTransactionDirectionSign_ReturnsCorrectSign()
         {
-            // Arrange
             var component = RenderComponent<History>();
             var transaction = new History.TransactionDto { UserId = 123 };
 
-            // Act & Assert
             Assert.Equal("−", component.Instance.GetTransactionDirectionSign(transaction));
         }
 
         [Fact]
         public void GetTransactionCounterpartyLabel_ReturnsCorrectLabel()
         {
-            // Arrange
             var component = RenderComponent<History>();
             var transaction = new History.TransactionDto { UserId = 123 };
 
-            // Act & Assert
             Assert.Equal("Получатель", component.Instance.GetTransactionCounterpartyLabel(transaction));
         }
 
         [Fact]
         public void PeriodFilter_WorksCorrectly()
         {
-            // Arrange
             var component = RenderComponent<History>();
 
-            // Act
             component.FindAll("select")[0].Change("year");
 
-            // Assert
             Assert.Equal("year", component.Instance.selectedPeriod);
         }
     }

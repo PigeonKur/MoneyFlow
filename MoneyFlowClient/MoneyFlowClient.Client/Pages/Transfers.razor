@@ -10,7 +10,6 @@
 <link href="css/account.css" rel="stylesheet" />
 
 <style>
-    /* Основные стили (как в MainScreen) */
     :root {
         --primary-color: #2e86de;
         --sidebar-width: 110px;
@@ -27,7 +26,6 @@
         color: #000000;
     }
 
-    /* Общая структура */
     .screen {
         display: grid;
         grid-template-columns: var(--sidebar-width) 1fr;
@@ -35,7 +33,6 @@
         min-height: 100vh;
     }
 
-    /* Шапка */
     .header {
         grid-column: 2;
         grid-row: 1;
@@ -55,7 +52,6 @@
         color: var(--primary-color);
     }
 
-    /* Боковая панель */
     .sidebar {
         grid-column: 1;
         grid-row: 1 / span 2;
@@ -95,7 +91,6 @@
             height: 60px;
         }
 
-    /* Основное содержимое - смещено влево-вверх */
     .admin-content {
         grid-column: 2;
         padding: 15px 20px;
@@ -111,11 +106,10 @@
 
     .page-title {
         font-size: 22px;
-        margin: 0 0 15px 0; /* Уменьшил отступы */
+        margin: 0 0 15px 0; 
         color: #000;
         font-weight: 700;
     }
-    /* Стили для страницы переводов */
     .transfer-container {
         max-width: 460px;
         margin: 0 auto;
@@ -156,8 +150,8 @@
         overflow-x: auto;
         margin-bottom: 20px;
         padding-bottom: 10px;
-        padding-top: 15px; /* Добавлено */
-        min-height: 120px; /* Добавлено */
+        padding-top: 15px; 
+        min-height: 120px; 
     }
 
     .recent-users {
@@ -241,7 +235,6 @@
             transform: translateY(-2px);
         }
 
-    /* Аватар и баланс */
     .avatar {
         width: 40px;
         height: 40px;
@@ -412,7 +405,6 @@
 </style>
 
 <div class="screen">
-    <!-- Шапка (как в MainScreen) -->
     <div class="header">
         <div class="logo" @onclick="NavigateToMain">MoneyFlow</div>
         <div class="user-panel">
@@ -427,7 +419,6 @@
         </div>
     </div>
 
-    <!-- Боковая панель (как в MainScreen) -->
     <div class="sidebar">
         <div class="sidebar-item" @onclick="NavigateToHistory">
             <img src="img/history-icon.svg" alt="История" />
@@ -451,7 +442,6 @@
         }
     </div>
 
-    <!-- Основной контент -->
     <div class="admin-content">
         <h1 class="page-title">Переводы</h1>
 
@@ -602,7 +592,7 @@
         await LoadUserBalance();
         await ProcessAuthState(authState);
         await LoadUserCards();
-        await LoadRecentUsers(); // Загружаем последних пользователей
+        await LoadRecentUsers(); 
     }
 
     private async Task ProcessAuthState(AuthenticationState authState)
@@ -612,9 +602,8 @@
         if (user.Identity is { IsAuthenticated: true })
         {
             userId = user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            _userEmail = user.FindFirst(ClaimTypes.Email)?.Value; // Получаем email пользователя
+            _userEmail = user.FindFirst(ClaimTypes.Email)?.Value; 
 
-            // Получаем роль из claims
             var roleClaim = user.FindFirst(ClaimTypes.Role)?.Value;
             isAdmin = roleClaim == "1";
 
@@ -663,11 +652,9 @@
             {
                 var userData = await response.Content.ReadFromJsonAsync<UserData>();
 
-                // Инициализируем значения по умолчанию для null
                 _userName = userData?.Name ?? string.Empty;
                 _email = userData?.Email ?? string.Empty;
 
-                // Используем URL аватарки из базы данных или fallback
                 _avatarUrl = userData?.AvatarUrl ?? "https://placehold.co/40";
 
                 StateHasChanged();
@@ -709,7 +696,6 @@
             if (response.IsSuccessStatusCode)
             {
                 recentUsers = await response.Content.ReadFromJsonAsync<List<User>>() ?? new List<User>();
-                // Дополнительная фильтрация на клиенте (на всякий случай)
                 recentUsers = recentUsers.Where(u => u.UserId != int.Parse(userId)).ToList();
             }
         }
@@ -750,7 +736,6 @@
 
         try
         {
-            // Проверка на самого себя по email
             var currentUserEmail = user.FindFirst(ClaimTypes.Email)?.Value;
             if (transferTarget.Equals(currentUserEmail, StringComparison.OrdinalIgnoreCase))
             {
@@ -758,10 +743,8 @@
                 return;
             }
 
-            // Сначала пробуем найти по ID (если ввод - число)
             if (int.TryParse(transferTarget, out int targetUserId))
             {
-                // Проверка на самого себя по ID
                 if (targetUserId == int.Parse(userId))
                 {
                     await JSRuntime.InvokeVoidAsync("alert", "Нельзя перевести самому себе");
@@ -779,7 +762,6 @@
                 }
             }
 
-            // Поиск по email
             var emailResponse = await Http.GetAsync($"api/UserAccount/by-email/{transferTarget}");
             if (!emailResponse.IsSuccessStatusCode)
             {
@@ -827,7 +809,7 @@
                     ToUserId = targetUser.UserId,
                     Amount = transferAmount,
                     Comment = string.IsNullOrWhiteSpace(comment) ? "Без комментария" : comment,
-                    FromCardId = selectedCard.BudgetId // ← вот эта строка нужна
+                    FromCardId = selectedCard.BudgetId 
                 };
 
 
@@ -838,7 +820,6 @@
                 var result = await response.Content.ReadFromJsonAsync<TransferResult>();
                 await JSRuntime.InvokeVoidAsync("alert", "Перевод выполнен успешно");
 
-                // Проверка статуса транзакции
                 var statusResponse = await Http.GetAsync($"api/UserAccount/transaction-status/{result.TransactionId}");
                 if (statusResponse.IsSuccessStatusCode)
                 {
@@ -848,7 +829,7 @@
 
                 // 👉 вот сюда добавь
                 await LoadUserBalance();
-                await LoadUserCards(); // ← обновляем баланс карт
+                await LoadUserCards(); 
 
                 showTransferForm = false;
                 StateHasChanged();
@@ -917,7 +898,6 @@
     }
     private void StartQuickTransfer(User user)
     {
-        // Дополнительная проверка (хотя сервер уже не должен возвращать текущего пользователя)
         if (user.UserId == int.Parse(userId))
         {
             JSRuntime.InvokeVoidAsync("alert", "Нельзя выбрать себя");
@@ -964,7 +944,7 @@
         public int ToUserId { get; set; }
         public decimal Amount { get; set; }
         public string Comment { get; set; }
-        public int FromCardId { get; set; } // ← добавить сюда
+        public int FromCardId { get; set; } 
     }
     public class UserData
     {

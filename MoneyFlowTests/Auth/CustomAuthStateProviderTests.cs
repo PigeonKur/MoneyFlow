@@ -10,7 +10,6 @@ namespace MoneyFlowTests.Auth
         [Fact]
         public async Task GetAuthenticationStateAsync_WhenUserInLocalStorage_ReturnsAuthenticatedState()
         {
-            // Arrange
             var userInfo = new UserInfo { UserId = 1, Email = "test@mail.com" };
             var userJson = JsonSerializer.Serialize(userInfo);
 
@@ -21,10 +20,8 @@ namespace MoneyFlowTests.Auth
 
             var provider = new CustomAuthStateProvider(jsRuntimeMock.Object);
 
-            // Act
             var authState = await provider.GetAuthenticationStateAsync();
 
-            // Assert
             Assert.True(authState.User.Identity.IsAuthenticated);
             Assert.Equal("1", authState.User.FindFirst(ClaimTypes.NameIdentifier)?.Value);
         }
@@ -32,7 +29,6 @@ namespace MoneyFlowTests.Auth
         [Fact]
         public async Task GetAuthenticationStateAsync_WhenNoUserInLocalStorage_ReturnsAnonymousState()
         {
-            // Arrange
             var jsRuntimeMock = new Mock<IJSRuntime>();
             jsRuntimeMock
                 .Setup(js => js.InvokeAsync<string>("localStorage.getItem", It.IsAny<object[]>()))
@@ -40,10 +36,8 @@ namespace MoneyFlowTests.Auth
 
             var provider = new CustomAuthStateProvider(jsRuntimeMock.Object);
 
-            // Act
             var authState = await provider.GetAuthenticationStateAsync();
 
-            // Assert
             Assert.False(authState.User.Identity.IsAuthenticated);
         }
     }

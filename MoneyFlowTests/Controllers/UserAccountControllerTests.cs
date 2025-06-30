@@ -31,7 +31,6 @@ namespace MoneyFlowTests.Controllers
                 It.IsAny<string>()))
                 .Returns(PasswordVerificationResult.Success);
 
-            // Добавляем тестового пользователя
             context.Users.Add(new User
             {
                 Email = "test@mail.com",
@@ -46,7 +45,6 @@ namespace MoneyFlowTests.Controllers
         [Fact]
         public async Task Login_ValidCredentials_ReturnsOk()
         {
-            // Arrange
             var options = new DbContextOptionsBuilder<AppDbContext>()
                 .UseInMemoryDatabase(databaseName: "TestDb_" + Guid.NewGuid())
                 .Options;
@@ -66,14 +64,12 @@ namespace MoneyFlowTests.Controllers
 
             var controller = new UserAccountController(context, loggerMock.Object);
 
-            // Act
             var result = await controller.Login(new UserLoginModel
             {
                 Email = "test@mail.com",
                 Password = "123456"
             });
 
-            // Assert
             Assert.NotNull(result);
             Assert.IsAssignableFrom<IActionResult>(result);
         }
@@ -81,11 +77,9 @@ namespace MoneyFlowTests.Controllers
         [Fact]
         public async Task Register_ExistingEmail_ReturnsConflict()
         {
-            // Arrange
             var (context, hasherMock, loggerMock) = GetDependencies();
             var controller = new UserAccountController(context, loggerMock.Object);
 
-            // Act
             var result = await controller.Create(new UserRegisterModel
             {
                 Email = "test@mail.com",
@@ -93,7 +87,6 @@ namespace MoneyFlowTests.Controllers
                 Name = "Test User"
             });
 
-            // Assert
             var conflict = Assert.IsType<ConflictObjectResult>(result);
             Assert.Equal("Пользователь с таким email уже существует", conflict.Value);
         }

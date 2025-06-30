@@ -25,15 +25,12 @@ namespace MoneyFlowTests.InvestmentsTest
         [Fact]
         public async Task GetPortfolio_NoInvestments_ReturnsEmptyList()
         {
-            // Arrange
             var context = GetInMemoryDbContext(nameof(GetPortfolio_NoInvestments_ReturnsEmptyList));
             var mockPriceService = new Mock<IStockPriceService>();
             var controller = new InvestmentsController(context, mockPriceService.Object);
 
-            // Act
             var result = await controller.GetPortfolio(userId: 1, period: "month");
 
-            // Assert
             var okResult = Assert.IsType<OkObjectResult>(result.Result);
             var data = Assert.IsAssignableFrom<IEnumerable<PortfolioDataPoint>>(okResult.Value);
             Assert.Empty(data);
@@ -64,7 +61,7 @@ namespace MoneyFlowTests.InvestmentsTest
                 StockId = 2,
                 Quantity = 5,
                 TransactionType = "BUY",
-                InvestmentType = "Stock", // <-- обязательное поле
+                InvestmentType = "Stock",
                 InvestmentDate = DateTime.UtcNow.AddDays(-3)
             });
             await context.SaveChangesAsync();
@@ -94,7 +91,7 @@ namespace MoneyFlowTests.InvestmentsTest
                 Quantity = 5,
                 PurchasePrice = 80,
                 TransactionType = "BUY",
-                InvestmentType = "Stock", // <-- обязательное поле
+                InvestmentType = "Stock", 
                 InvestmentDate = DateTime.UtcNow.AddDays(-3)
             });
             await context.SaveChangesAsync();

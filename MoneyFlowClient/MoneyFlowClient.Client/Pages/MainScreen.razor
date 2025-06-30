@@ -17,10 +17,9 @@
 <script src="js/dashboardCharts.js"></script>
 
 <style>
-	/* Основные стили */
 	:root {
 		--primary-color: #2e86de;
-		--sidebar-width: 110px; /* Уменьшил ширину сайдбара */
+		--sidebar-width: 110px; 
 		--header-height: 70px;
 		--card-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
 		--border-color: #eae6e6;
@@ -33,7 +32,6 @@
 		color: #000000;
 	}
 
-	/* Общая структура */
 	.screen {
 		display: grid;
 		grid-template-columns: var(--sidebar-width) 1fr;
@@ -41,14 +39,13 @@
 		min-height: 100vh;
 	}
 
-	/* Шапка */
 	.header {
 		grid-column: 2;
 		grid-row: 1;
 		display: flex;
 		justify-content: space-between;
 		align-items: center;
-		padding: 0 25px; /* Уменьшил отступы */
+		padding: 0 25px; 
 		background: #ffffff;
 		box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 		z-index: 100;
@@ -61,7 +58,6 @@
 		color: var(--primary-color);
 	}
 
-	/* Боковая панель с увеличенными иконками */
 	.sidebar {
 		grid-column: 1;
 		grid-row: 1 / span 2;
@@ -76,7 +72,7 @@
 
 	.sidebar-item {
 		width: 100%;
-		padding: 25px 0; /* Увеличил отступы */
+		padding: 25px 0; 
 		display: flex;
 		flex-direction: column;
 		align-items: center;
@@ -97,31 +93,29 @@
 		}
 
 		.sidebar-item img {
-			width: 60px; /* Увеличил иконки */
+			width: 60px; 
 			height: 60px;
 		}
 
-	/* Основное содержимое - смещено влево-вверх */
 	.main-content {
 		grid-column: 2;
 		grid-row: 2;
-		padding: 15px 20px; /* Уменьшил отступы */
+		padding: 15px 20px; 
 		background-color: #f8f9fd;
-		margin-top: 0px; /* Сдвигаем вверх */
-		margin-left: 35px; /* Сдвигаем влево */
+		margin-top: 0px;
+		margin-left: 35px; 
 	}
 
 	.page-title {
 		font-size: 22px;
-		margin: 0 0 15px 0; /* Уменьшил отступы */
+		margin: 0 0 15px 0; 
 		color: #000;
 		font-weight: 700;
 	}
 
-	/* Карточки */
 	.dashboard-row {
 		display: flex;
-		gap: 15px; /* Уменьшил промежуток */
+		gap: 15px; 
 		margin-bottom: 15px;
 	}
 
@@ -136,12 +130,12 @@
 
 	.wide-card {
 		flex: 3;
-		min-height: 300px; /* Уменьшенная высота */
+		min-height: 300px; 
 	}
 
 	.small-card {
 		flex: 1;
-		min-height: 300px; /* Уменьшенная высота */
+		min-height: 300px; 
 	}
 
 	.card-header {
@@ -159,7 +153,6 @@
 		}
 
 
-	/* Элементы управления */
 	.period-selector select {
 		padding: 6px 10px;
 		border: 1px solid #ddd;
@@ -169,13 +162,11 @@
 		cursor: pointer;
 	}
 
-	/* Контейнер для графиков */
 	.chart-container {
 		flex-grow: 1;
 		position: relative;
-		min-height: 200px; /* Уменьшенная высота области графика */
+		min-height: 200px; 
 	}
-	/* Панель пользователя */
 	.user-panel {
 		display: flex;
 		align-items: center;
@@ -417,7 +408,7 @@
 		if (user.Identity is { IsAuthenticated: true })
 		{
 			userId = user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-			_userEmail = user.FindFirst(ClaimTypes.Email)?.Value; // Получаем email пользователя
+			_userEmail = user.FindFirst(ClaimTypes.Email)?.Value; 
 
 			// Получаем роль из claims
 			var roleClaim = user.FindFirst(ClaimTypes.Role)?.Value;
@@ -534,27 +525,22 @@
 			{
 				var dashboardData = await response.Content.ReadFromJsonAsync<DashboardData>();
 
-				// Основной график
 				mainChartTransactions = dashboardData.Transactions
 					.Where(t => t.TransactionDate >= GetStartDate(selectedPeriod, DateTime.Now))
 					.ToList();
 
-				// График доходов
 				incomeChartTransactions = dashboardData.Transactions
 					.Where(t => t.TransactionDate >= GetStartDate(selectedMiniIncomePeriod, DateTime.Now))
 					.ToList();
 
-				// График расходов
 				expenseChartTransactions = dashboardData.Transactions
 					.Where(t => t.TransactionDate >= GetStartDate(selectedMiniExpensePeriod, DateTime.Now))
 					.ToList();
 
-				// График тренда
 				trendChartBalanceHistory = dashboardData.BalanceHistory
 					.Where(b => b.Date >= GetStartDate(selectedTrendPeriod, DateTime.Now))
 					.ToList();
 
-				// Пересчитываем категории
 				incomeCategories = CalculateIncomeCategories(incomeChartTransactions);
 				expenseCategories = CalculateExpenseCategories(expenseChartTransactions);
 
@@ -583,7 +569,7 @@
 			"week" => now.AddDays(-7),
 			"month" => now.AddMonths(-1),
 			"year" => now.AddYears(-1),
-			_ => now.AddMonths(-1) // по умолчанию месяц
+			_ => now.AddMonths(-1) 
 		};
 	}
 
@@ -591,7 +577,7 @@
 	private Dictionary<string, decimal> CalculateIncomeCategories(List<TransactionDto> transactions)
 	{
 		return transactions
-			.Where(t => t.Amount > 0) // Доходы
+			.Where(t => t.Amount > 0) 
 			.GroupBy(t => t.IsInvestment
 				? (t.TransactionType == "Продажа акций" ? "Продажа акций" : t.TransactionType)
 				: t.TransactionType)
@@ -653,7 +639,7 @@
 	{
 		try
 		{
-			// 1. График доходов/расходов (использует mainChartTransactions)
+			// 1. График доходов/расходов 
 			if (mainChartTransactions.Any())
 			{
 				var groupedTransactions = GroupTransactions(mainChartTransactions, selectedPeriod);
@@ -664,7 +650,7 @@
 					groupedTransactions.Expenses);
 			}
 
-			// 2. График динамики остатков (использует trendChartBalanceHistory)
+			// 2. График динамики остатков 
 			if (trendChartBalanceHistory.Any())
 			{
 				var balanceLabels = trendChartBalanceHistory
@@ -848,8 +834,6 @@
 		public string FromBudgetName { get; set; }
 		public int? ToBudgetId { get; set; }
 		public string ToBudgetName { get; set; }
-
-		// Поля для инвестиций
 		public bool IsInvestment { get; set; }
 		public int? StockId { get; set; }
 		public string StockName { get; set; }

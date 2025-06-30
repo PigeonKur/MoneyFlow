@@ -54,7 +54,6 @@ namespace MoneyFlowTests.AdminPanel
             context.Transactions.Add(new Transaction { Amount = 500, TransactionType = "Перевод", TransactionDate = DateTime.Now, Comment = "Test" });
             context.Budgets.Add(new Budget { Amount = 3000 });
 
-            // Исправленная строка - добавлен InvestmentType
             context.Investments.Add(new Investment
             {
                 Amount = 1000,

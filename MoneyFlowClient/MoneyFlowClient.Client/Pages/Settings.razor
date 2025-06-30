@@ -9,7 +9,6 @@
 @using System.Text.Json
 
 <style>
-    /* Стили шапки и сайдбара (как в MainScreen) */
     :root {
     --primary-color: #2e86de;
     --sidebar-width: 110px;
@@ -32,7 +31,6 @@
     min-height: 100vh;
     }
 
-    /* Шапка */
     .header {
     grid-column: 2;
     grid-row: 1;
@@ -51,7 +49,6 @@
     color: var(--primary-color);
     }
 
-    /* Боковая панель */
     .sidebar {
     grid-column: 1;
     grid-row: 1 / span 2;
@@ -90,7 +87,6 @@
     height: 60px;
     }
 
-    /* Панель пользователя */
     .user-panel {
     display: flex;
     align-items: center;
@@ -130,7 +126,6 @@
     object-fit: cover;
     }
 
-    /* Стили для страницы настроек */
     .settings-container {
     grid-column: 2;
     grid-row: 2;
@@ -242,7 +237,6 @@
 </style>
 
 <div class="screen">
-    <!-- Шапка (как в MainScreen) -->
     <div class="header">
         <div class="logo" @onclick="NavigateToMain">MoneyFlow</div>
         <div class="user-panel">
@@ -256,7 +250,6 @@
         </div>
     </div>
 
-    <!-- Боковая панель (как в MainScreen) -->
     <div class="sidebar">
         <div class="sidebar-item" @onclick="NavigateToHistory">
             <img src="img/history-icon.svg" alt="История" />
@@ -280,13 +273,10 @@
         }
     </div>
 
-    <!-- Основной контент страницы настроек -->
     <div class="settings-container">
-        <!-- Карточка профиля -->
         <div class="settings-card">
             <div class="settings-header">Настройки профиля</div>
 
-            <!-- Аватар -->
             <div class="form-group">
                 <label class="form-label">Аватар</label>
                     <div class="avatar-upload">
@@ -301,26 +291,22 @@
                     </div>
             </div>
 
-            <!-- Имя -->
             <div class="form-group">
                 <label class="form-label">Имя</label>
                 <input type="text" class="form-control" @bind="_userName" />
             </div>
 
-            <!-- Email -->
             <div class="form-group">
                 <label class="form-label">Email</label>
                 <input type="email" class="form-control" @bind="_email" />
             </div>
 
-            <!-- Пароль -->
             <div class="form-group">
                 <label class="form-label">Новый пароль</label>
                 <input type="password" class="form-control" @bind="_newPassword"
                 placeholder="Оставьте пустым, если не нужно менять" />
             </div>
 
-            <!-- Подтверждение пароля -->
             <div class="form-group">
                 <label class="form-label">Подтвердите пароль</label>
                 <input type="password" class="form-control" @bind="_confirmPassword" />
@@ -329,7 +315,6 @@
             <button class="btn-primary" @onclick="SaveProfile">Сохранить изменения</button>
         </div>
 
-        <!-- Опасная зона -->
         <div class="settings-card">
             <div class="settings-header">Опасная зона</div>
 
@@ -382,7 +367,6 @@
 
 
 
-    // Методы навигации
     private void NavigateToMain() => Navigation.NavigateTo("/main");
     private void NavigateToHistory() => Navigation.NavigateTo("/history");
     private void NavigateToTransfers() => Navigation.NavigateTo("/transfers");
@@ -434,7 +418,7 @@
         if (user.Identity?.IsAuthenticated == true)
         {
             userId = user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            _userId = int.Parse(userId); // Убедитесь, что это преобразование безопасно
+            _userId = int.Parse(userId);
         }
 
         var response = await Http.GetAsync($"api/UserAccount/{_userId}/with-avatar");
@@ -532,14 +516,12 @@
             return;
         }
 
-        // Проверка размера файла (макс. 2MB)
         if (file.Size > 2 * 1024 * 1024)
         {
             _message = "Максимальный размер файла - 2MB";
             return;
         }
 
-        // Проверка типа файла (более гибкая)
         var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".svg" };
         var fileExtension = Path.GetExtension(file.Name).ToLower();
         
@@ -549,14 +531,11 @@
             return;
         }
 
-        // Создаем FormData
         using var formData = new MultipartFormDataContent();
         
-        // Добавляем файл
         using var fileContent = new StreamContent(file.OpenReadStream(2 * 1024 * 1024));
         formData.Add(fileContent, "file", file.Name);
         
-        // Добавляем userId
         formData.Add(new StringContent(_userId.ToString()), "userId");
 
         var response = await Http.PostAsync("api/UserAccount/upload-avatar", formData);
@@ -571,13 +550,13 @@
         {
             var error = await response.Content.ReadAsStringAsync();
             _message = $"Ошибка загрузки: {error}";
-            Console.WriteLine($"Ошибка API: {error}"); // Логирование для отладки
+            Console.WriteLine($"Ошибка API: {error}");
         }
     }
     catch (Exception ex)
     {
         _message = $"Ошибка: {ex.Message}";
-        Console.WriteLine($"Исключение: {ex}"); // Логирование для отладки
+        Console.WriteLine($"Исключение: {ex}");
     }
     finally
     {
@@ -597,7 +576,7 @@
 
             var updateModel = new
             {
-                UserId = int.Parse(userId), // Преобразуем string в int
+                UserId = int.Parse(userId),
                 Name = _userName,
                 Email = _email,
                 NewPassword = _newPassword

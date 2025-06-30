@@ -102,7 +102,6 @@
 			height: 60px;
 		}
 
-	/* Основное содержимое */
 	.main-content {
 		grid-column: 2;
 		grid-row: 2;
@@ -158,7 +157,6 @@
 			object-fit: cover;
 		}
 
-	/* Стили для истории операций */
 	.history-container {
 		background: linear-gradient(148deg, rgba(234, 238, 252, 1) 0%, rgba(253, 251, 251, 1) 100%);
 		border-radius: 20px;
@@ -218,7 +216,6 @@
 		gap: 15px;
 		margin-top: 20px;
 	}
-	<!-- Добавьте эти стили в секцию <style > -->
 	.filters {
 		display: flex;
 		gap: 15px;
@@ -505,9 +502,8 @@
 		if (user.Identity is { IsAuthenticated: true })
 		{
 			userId = user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-			_userEmail = user.FindFirst(ClaimTypes.Email)?.Value; // Получаем email пользователя
+			_userEmail = user.FindFirst(ClaimTypes.Email)?.Value;
 
-			// Получаем роль из claims
 			var roleClaim = user.FindFirst(ClaimTypes.Role)?.Value;
 			isAdmin = roleClaim == "1";
 
@@ -538,11 +534,9 @@
 			{
 				var userData = await response.Content.ReadFromJsonAsync<UserData>();
 
-				// Инициализируем значения по умолчанию для null
 				_userName = userData?.Name ?? string.Empty;
 				_email = userData?.Email ?? string.Empty;
 
-				// Используем URL аватарки из базы данных или fallback
 				_avatarUrl = userData?.AvatarUrl ?? "https://placehold.co/40";
 
 				StateHasChanged();
@@ -623,7 +617,6 @@
 				transactions = await response.Content.ReadFromJsonAsync<List<TransactionDto>>(options)
 					?? new List<TransactionDto>();
 
-				// Обработка направлений транзакций
 				foreach (var t in transactions)
 				{
 					if (!t.IsInvestment)
@@ -652,21 +645,18 @@
 	{
 		try
 		{
-			// Собираем все ID пользователей, которые участвуют в транзакциях
 			var userIds = transactions
 				.SelectMany(t => new[] { t.UserId, t.RelatedUserId ?? 0 })
 				.Where(id => id > 0)
 				.Distinct()
 				.ToList();
 
-			// Находим ID, которых ещё нет в кэше
 			var missingIds = userIds
 				.Where(id => !userNamesCache.ContainsKey(id))
 				.ToList();
 
 			if (missingIds.Any())
 			{
-				// Загружаем имена для отсутствующих пользователей
 				var response = await Http.PostAsJsonAsync("api/UserAccount/batch-users", missingIds);
 
 				if (response.IsSuccessStatusCode)
@@ -769,8 +759,6 @@
 		public string FromBudgetName { get; set; }
 		public int? ToBudgetId { get; set; }
 		public string ToBudgetName { get; set; }
-
-		// Поля для инвестиций
 		public bool IsInvestment { get; set; }
 		public int? StockId { get; set; }
 		public string StockName { get; set; }

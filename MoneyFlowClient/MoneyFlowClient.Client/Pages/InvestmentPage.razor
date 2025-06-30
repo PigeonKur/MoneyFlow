@@ -12,7 +12,6 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <style>
-	/* Основные стили (такие же как в MainScreen) */
 	:root {
 		--primary-color: #2e86de;
 		--sidebar-width: 110px;
@@ -36,7 +35,6 @@
 		min-height: 100vh;
 	}
 
-	/* Шапка (точно такая же как в MainScreen) */
 	.header {
 		grid-column: 2;
 		grid-row: 1;
@@ -65,7 +63,6 @@
 		color: var(--primary-color);
 	}
 
-	/* Боковая панель (точно такая же как в MainScreen) */
 	.sidebar {
 		grid-column: 1;
 		grid-row: 1 / span 2;
@@ -105,7 +102,6 @@
 			height: 60px;
 		}
 
-	/* Основное содержимое страницы Account */
 	.account-content {
 		grid-column: 2;
 		grid-row: 2;
@@ -113,7 +109,6 @@
 		background-color: #f8f9fd;
 	}
 
-	/* Стили для карточек в Account */
 	.account-card {
 		background: white;
 		border-radius: 10px;
@@ -163,7 +158,6 @@
 		font-size: 14px;
 	}
 
-	/* Панель пользователя (точно такая же как в MainScreen) */
 	.user-panel {
 		display: flex;
 		align-items: center;
@@ -458,22 +452,20 @@
 
 	.investments-container {
 		display: grid;
-		grid-template-columns: 2fr 1fr; /* 2/3 ширины для графиков, 1/3 для боковых панелей */
-		grid-template-rows: auto auto; /* Две строки */
+		grid-template-columns: 2fr 1fr; 
+		grid-template-rows: auto auto; 
 		gap: 20px;
 		margin-bottom: 20px;
 	}
 
-	/* Левая колонка с графиками */
 	.charts-column {
 		grid-column: 1;
-		grid-row: 1 / span 2; /* Занимает обе строки */
+		grid-row: 1 / span 2; 
 		display: flex;
 		flex-direction: column;
 		gap: 20px;
 	}
 
-	/* Правая колонка с боковыми панелями */
 	.side-column {
 		grid-column: 2;
 		display: flex;
@@ -481,7 +473,6 @@
 		gap: 20px;
 	}
 
-	/* Стили для карточек */
 	.investment-card {
 		background: white;
 		border-radius: 20px;
@@ -492,7 +483,6 @@
 		flex-direction: column;
 	}
 
-	/* Стили для списков с прокруткой */
 	.stocks-list, .transactions-list {
 		overflow-y: auto;
 		max-height: 300px;
@@ -515,7 +505,6 @@
 </style>
 
 <div class="screen">
-	<!-- Шапка (точно такая же как в MainScreen) -->
 	<div class="header">
 		<div class="logo" @onclick="NavigateToMain">MoneyFlow</div>
 		<div class="user-panel">
@@ -531,7 +520,6 @@
 		</div>
 	</div>
 
-	<!-- Боковая панель (точно такая же как в MainScreen) -->
 	<div class="sidebar">
 		<div class="sidebar-item" @onclick="NavigateToHistory">
 			<img src="img/history-icon.svg" alt="История" />
@@ -557,11 +545,8 @@
 	<div class="main-content">
 		<h1 class="page-title">Инвестиции</h1>
 
-		<!-- Новая структура с графиками и боковыми панелями -->
 		<div class="investments-container">
-			<!-- Колонка с графиками -->
 			<div class="charts-column">
-				<!-- График стоимости портфеля -->
 				<div class="investment-card">
 					<div class="investment-card-header">
 						<h2>График стоимости портфеля</h2>
@@ -578,7 +563,6 @@
 					</div>
 				</div>
 
-				<!-- График доходности портфеля -->
 				<div class="investment-card">
 					<div class="investment-card-header">
 						<h2>Доходность портфеля</h2>
@@ -596,9 +580,7 @@
 				</div>
 			</div>
 
-			<!-- Правая колонка с дополнительной информацией -->
 			<div class="side-column">
-				<!-- Популярные акции -->
 				<div class="investment-card">
 					<div class="investment-card-header">
 						<h2>Популярные акции</h2>
@@ -786,7 +768,7 @@
 	// Классы моделей
 	public class Stock
 	{
-		public int StockId { get; set; }  // Измените string на int
+		public int StockId { get; set; } 
 		public string Name { get; set; }
 		public string Ticker { get; set; }
 		public decimal Price { get; set; }
@@ -879,11 +861,9 @@
 			{
 				var userData = await response.Content.ReadFromJsonAsync<UserData>();
 
-				// Инициализируем значения по умолчанию для null
 				_userName = userData?.Name ?? string.Empty;
 				_email = userData?.Email ?? string.Empty;
 
-				// Используем URL аватарки из базы данных или fallback
 				_avatarUrl = userData?.AvatarUrl ?? "https://placehold.co/40";
 
 				StateHasChanged();
@@ -908,7 +888,6 @@
 		catch (Exception ex)
 		{
 			Console.WriteLine($"Error loading stocks: {ex.Message}");
-			// Можно показать сообщение об ошибке
 		}
 		finally
 		{
@@ -1096,10 +1075,8 @@
 	{
 		if (!investments.Any()) return;
 
-		// Берем только купленные акции (не проданные)
 		var activeInvestments = investments.Where(i => i.TransactionType == "BUY").ToList();
 
-		// Получаем текущие цены для всех акций
 		foreach (var inv in activeInvestments)
 		{
 			var response = await Http.GetAsync($"api/stocks/{inv.StockId}/price");
@@ -1109,7 +1086,6 @@
 			}
 		}
 
-		// Рассчитываем общую стоимость и доходность
 		decimal totalCost = activeInvestments.Sum(i => i.PurchasePrice * i.Quantity);
 		decimal totalValue = activeInvestments.Sum(i => (i.CurrentPrice ?? 0) * i.Quantity);
 
@@ -1149,7 +1125,6 @@
 		}
 	}
 
-	// Методы для работы с модальными окнами
 	private void ShowBuyModal(Stock stock)
 	{
 		selectedStock = stock;
@@ -1183,7 +1158,6 @@
 				showSellModal = true;
 				showSellModal = true;
 				UpdateProfitValue();
-				// Force UI update
 				StateHasChanged();
 			}
 			else

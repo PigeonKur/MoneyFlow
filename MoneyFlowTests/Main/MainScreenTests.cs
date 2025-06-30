@@ -16,7 +16,6 @@ namespace MoneyFlowTests.Main
         [Fact]
         public void GenerateBalanceHistory_OneExpenseTransaction_UpdatesBalanceCorrectly()
         {
-            // Arrange
             var options = new DbContextOptionsBuilder<AppDbContext>()
                 .UseInMemoryDatabase("TestDb1")
                 .Options;
@@ -37,12 +36,10 @@ namespace MoneyFlowTests.Main
         }
     };
 
-            // Act
             var history = controller.GenerateBalanceHistory(1, transactions, DateTime.UtcNow.AddDays(-1));
 
-            // Assert
-            Assert.Equal(2, history.Count); // стартовая точка + 1 транзакция
-            Assert.Equal(800, history.Last().Balance); // 1000 - 200 = 800
+            Assert.Equal(2, history.Count); 
+            Assert.Equal(800, history.Last().Balance);
         }
 
         [Fact]

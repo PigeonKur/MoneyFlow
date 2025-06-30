@@ -10,9 +10,7 @@
 
 <link href="css/account.css" rel="stylesheet" />
 
-<!-- Стили как в MainScreen (не меняем) -->
 <style>
-	/* Основные стили */
 	:root {
 		--primary-color: #2e86de;
 		--sidebar-width: 110px;
@@ -27,14 +25,12 @@
 		color: #000000;
 	}
 
-	/* Общая структура */
 	.screen {
 		display: grid;
 		grid-template-columns: var(--sidebar-width) 1fr;
 		min-height: 100vh;
 	}
 
-	/* Шапка */
 	.header {
 		grid-column: 2;
 		grid-row: 1;
@@ -54,7 +50,6 @@
 		color: var(--primary-color);
 	}
 
-	/* Боковая панель */
 	.sidebar {
 		grid-column: 1;
 		grid-row: 1 / span 2;
@@ -94,39 +89,37 @@
 			height: 60px;
 		}
 
-	/* Основное содержимое админки */
+	
 	.admin-content {
 		grid-column: 2;
 		grid-row: 2;
-		padding: 30px 40px; /* Увеличил отступы */
+		padding: 30px 40px;
 		background-color: #f8f9fd;
-		margin-left: 50px; /* Сдвигаем правее от сайдбара */
+		margin-left: 50px;
 	}
 
 		.admin-content h1 {
 			font-size: 24px;
-			margin-bottom: 30px; /* Увеличил отступ под заголовком */
+			margin-bottom: 30px;
 			color: #000;
 			font-weight: 700;
 		}
 
-	/* Карточки админки */
 	.admin-card {
 		background: white;
 		border-radius: 10px;
 		padding: 25px;
-		margin-bottom: 30px; /* Увеличил отступ между карточками */
+		margin-bottom: 30px; 
 		box-shadow: var(--card-shadow);
 	}
 
 		.admin-card h2 {
 			font-size: 18px;
-			margin: 0 0 25px 0; /* Увеличил отступ под заголовком карточки */
+			margin: 0 0 25px 0; 
 			color: #000;
 			font-weight: 700;
 		}
 
-	/* Таблица */
 	.admin-table {
 		width: 100%;
 		border-collapse: collapse;
@@ -281,7 +274,6 @@
 </style>
 
 <div class="screen">
-	<!-- Шапка (как в MainScreen) -->
 	<div class="header">
 		<div class="logo" @onclick="NavigateToMain">
 			MoneyFlow
@@ -299,7 +291,6 @@
 		</div>
 	</div>
 
-	<!-- Боковая панель (как в MainScreen) -->
 	<div class="sidebar">
 		<div class="sidebar-item" @onclick="NavigateToHistory">
 			<img src="img/history-icon.svg" alt="История" />
@@ -444,7 +435,6 @@
 
 	[Inject]
 	private Supabase.Client? Supabase { get; set; }
-	// Методы навигации
 	private void NavigateToMain() => Navigation.NavigateTo("/main");
 	private void NavigateToHistory() => Navigation.NavigateTo("/history");
 	private void NavigateToTransfers() => Navigation.NavigateTo("/transfers");
@@ -452,7 +442,6 @@
 	private void NavigateToAdmin() => Navigation.NavigateTo("/admin");
 	private void NavigateToAccount() => Navigation.NavigateTo("/account");
 
-	// Модели данных
 	public class User
 	{
 		public int UserId { get; set; }
@@ -608,7 +597,6 @@
 				totalUsers = users?.Count ?? 0;
 			}
 
-			// Загрузка статистики
 			var statsResponse = await Http.GetAsync("api/UserAccount/stats");
 			if (statsResponse.IsSuccessStatusCode)
 			{
@@ -628,7 +616,6 @@
 
 	private async Task EditUser(int userId)
 	{
-		// Находим пользователя для редактирования
 		editingUser = users.FirstOrDefault(u => u.UserId == userId);
 		if (editingUser == null)
 		{
@@ -654,7 +641,7 @@
 			{
 				await JSRuntime.InvokeVoidAsync("alert", "Данные пользователя обновлены");
 				editingUser = null;
-				await LoadAdminData(); // Обновляем список
+				await LoadAdminData();
 			}
 			else
 			{
@@ -681,7 +668,7 @@
 		var response = await Http.DeleteAsync($"api/UserAccount/{userId}");
 		if (response.IsSuccessStatusCode)
 		{
-			await LoadAdminData(); // Обновляем список
+			await LoadAdminData();
 			await JSRuntime.InvokeVoidAsync("alert", "Пользователь успешно удален");
 		}
 		else

@@ -4,7 +4,6 @@
 <link href="css/site.css" rel="stylesheet" />
 
 <style>
-    /* Основные стили */
     body {
         margin: 0;
         font-family: Arial, sans-serif;
@@ -31,7 +30,6 @@
         width: 100%;
     }
 
-    /* Карточки */
     .card {
         background: white;
         border-radius: 8px;
@@ -56,7 +54,7 @@
         display: flex;
         justify-content: space-between;
         align-items: center;
-        margin-bottom: 10px; /* Уменьшил отступ */
+        margin-bottom: 10px; 
     }
 
     .card-image-container {
@@ -71,11 +69,10 @@
         width: 100%;
         height: 100%;
         object-fit: cover;
-        object-position: center; /* Центрируем изображение */
+        object-position: center;
         border-radius: 4px;
     }
 
-    /* Стили для текста */
     .card-title {
         font-size: 16px;
         font-weight: bold;
@@ -102,20 +99,16 @@
     }
 </style>
 
-<!-- Основной контейнер -->
 <div class="dashboard-container">
     <h1 class="page-title">Рабочий стол</h1>
 
-    <!-- Первый ряд -->
     <div class="dashboard-row">
-        <!-- Основной график -->
         <div class="card wide-card">
             <div class="card-image-container">
                 <img src="img/graph_trend.svg" alt="График доходов и расходов" />
             </div>
         </div>
 
-        <!-- График доходов -->
         <div class="card small-card">
             <div class="card-image-container">
                 <img src="img/graph_income.svg" alt="График доходов" />
@@ -123,16 +116,13 @@
         </div>
     </div>
 
-    <!-- Второй ряд -->
     <div class="dashboard-row">
-        <!-- График динамики -->
         <div class="card wide-card">
             <div class="card-image-container">
                 <img src="img/graph.svg" alt="График динамики" />
             </div>
         </div>
 
-        <!-- График расходов -->
         <div class="card small-card">
               <div class="card-image-container">
                 <img src="img/graph_expense.svg" alt="График расходов" />

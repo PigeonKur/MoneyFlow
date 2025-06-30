@@ -11,7 +11,6 @@
 <link href="css/account.css" rel="stylesheet" />
 
 <style>
-    /* Основные стили (такие же как в MainScreen) */
     :root {
         --primary-color: #2e86de;
         --sidebar-width: 110px;
@@ -35,7 +34,6 @@
         min-height: 100vh;
     }
 
-    /* Шапка (точно такая же как в MainScreen) */
     .header {
         grid-column: 2;
         grid-row: 1;
@@ -55,8 +53,6 @@
         color: var(--primary-color);
     }
 
-    /* Боковая панель (точно такая же как в MainScreen) */ 
-    .sidebar {
         grid-column: 1;
         grid-row: 1 / span 2;
         background: #ffffff;
@@ -95,7 +91,6 @@
             height: 60px;
         }
 
-    /* Основное содержимое страницы Account */
     .account-content {
         grid-column: 2;
         grid-row: 2;
@@ -103,7 +98,6 @@
         background-color: #f8f9fd;
     }
 
-    /* Стили для карточек в Account */
     .account-card {
         background: white;
         border-radius: 10px;
@@ -153,7 +147,6 @@
         font-size: 14px;
     }
 
-    /* Панель пользователя (точно такая же как в MainScreen) */
     .user-panel {
         display: flex;
         align-items: center;
@@ -193,7 +186,6 @@
             object-fit: cover;
         }
 
-    /* Действия (настройки, выход) */
     .account-actions {
         display: grid;
         grid-template-columns: 1fr 1fr;
@@ -225,7 +217,6 @@
         font-size: 20px;
     }
 
-    /* Стили для модального окна */
     .modal-overlay {
         position: fixed;
         top: 0;
@@ -375,7 +366,6 @@
 </style>
 
 <div class="screen">
-    <!-- Шапка (точно такая же как в MainScreen) -->
     <div class="header">
         <div class="logo" @onclick="NavigateToMain">MoneyFlow</div> 
         <div class="user-panel">
@@ -391,7 +381,6 @@
         </div>
     </div>
 
-    <!-- Боковая панель (точно такая же как в MainScreen) -->
     <div class="sidebar">
         <div class="sidebar-item" @onclick="NavigateToHistory">
             <img src="img/history-icon.svg" alt="История" />
@@ -640,9 +629,8 @@
         if (user.Identity is { IsAuthenticated: true })
         {
             userId = user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            _userEmail = user.FindFirst(ClaimTypes.Email)?.Value; // Получаем email пользователя
+            _userEmail = user.FindFirst(ClaimTypes.Email)?.Value;
 
-            // Получаем роль из claims
             var roleClaim = user.FindFirst(ClaimTypes.Role)?.Value;
             isAdmin = roleClaim == "1";
 
@@ -672,11 +660,9 @@
             {
                 var userData = await response.Content.ReadFromJsonAsync<UserData>();
 
-                // Инициализируем значения по умолчанию для null
                 _userName = userData?.Name ?? string.Empty;
                 _email = userData?.Email ?? string.Empty;
 
-                // Используем URL аватарки из базы данных или fallback
                 _avatarUrl = userData?.AvatarUrl ?? "https://placehold.co/40";
 
                 StateHasChanged();

@@ -17,11 +17,9 @@ namespace MoneyFlowTests.TransfersTest
 
         public TransfersTests()
         {
-            // Инициализация мока Supabase.Client
             _supabaseMock = new Mock<Client>("https://localhost", "anon-key", null);
             Services.AddSingleton(_supabaseMock.Object);
 
-            // Настройка тестовой авторизации
             this.AddTestAuthorization();
             JSInterop.Mode = JSRuntimeMode.Loose;
         }
@@ -29,10 +27,8 @@ namespace MoneyFlowTests.TransfersTest
         [Fact]
         public void GetInitials_ReturnsCorrectInitials()
         {
-            // Arrange
             var component = new Transfers();
 
-            // Act & Assert
             Assert.Equal("JD", component.GetInitials("John Doe"));
             Assert.Equal("JO", component.GetInitials("John O'Neil"));
             Assert.Equal("??", component.GetInitials(""));
@@ -41,10 +37,8 @@ namespace MoneyFlowTests.TransfersTest
         [Fact]
         public void GetShortName_ReturnsCorrectShortName()
         {
-            // Arrange
             var component = new Transfers();
 
-            // Act & Assert
             Assert.Equal("John D.", component.GetShortName("John Doe"));
             Assert.Equal("Verylong...", component.GetShortName("Verylongname"));
             Assert.Equal("??", component.GetShortName(""));
@@ -53,7 +47,6 @@ namespace MoneyFlowTests.TransfersTest
         [Fact]
         public async Task HandleTransfer_ShowsAlert_WhenCalled()
         {
-            // Arrange
             var authContext = this.AddTestAuthorization();
             authContext.SetAuthorized("test@test.com");
             authContext.SetClaims(
@@ -67,14 +60,13 @@ namespace MoneyFlowTests.TransfersTest
             var component = RenderComponent<Transfers>();
             component.Instance.transferTarget = "test@test.com";
 
-            // Act
+             
             await component.InvokeAsync(() => component.Instance.HandleTransfer());
         }
 
         [Fact]
         public async Task ExecuteTransfer_ShowsAlert_WhenCalled()
         {
-            // Arrange
             Services.AddSingleton<IJSRuntime>(JSInterop.JSRuntime);
             JSInterop.SetupVoid("alert");
 
@@ -82,7 +74,6 @@ namespace MoneyFlowTests.TransfersTest
             component.Instance.transferAmount = -100;
             component.Instance.targetUser = new Transfers.User { UserId = 2 };
 
-            // Act
             await component.InvokeAsync(() => component.Instance.ExecuteTransfer());
         }
     }

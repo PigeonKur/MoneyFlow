@@ -77,7 +77,7 @@
                     {
                         UserId = result.UserId,
                         Email = result.Email,
-                        RoleId = result.RoleId // Сохраняем роль
+                        RoleId = result.RoleId 
                     };
 
                 await AuthStateProvider.SetUserAsync(userInfo);
