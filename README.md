@@ -94,13 +94,13 @@ public async Task<IActionResult> GetDashboardData(int userId, string period = "m
 ---
 ## Визуализация
 
-![Пример Главного экрана]()
+![Пример Главного экрана](<img width="1369" height="663" alt="image" src="https://github.com/user-attachments/assets/2423a0f3-a872-47ef-aab6-957cf4693dd9" />)
 
-![Пример Личного кабинета]()
+![Пример Личного кабинета](<img width="1075" height="413" alt="image" src="https://github.com/user-attachments/assets/897a48cc-91a7-4c50-9970-7cb4f2a692db" />)
 
-![Пример Истории]()
+![Пример Истории](<img width="1313" height="646" alt="image" src="https://github.com/user-attachments/assets/41f45a54-5baf-4c9a-bdcd-b8810a74b363" />)
 
-![Пример Инвестиций]()
+![Пример Инвестиций](<img width="1288" height="626" alt="image" src="https://github.com/user-attachments/assets/640b4aa5-b6dc-455d-a952-82a168ab21f9" />)
 
 ---
 
